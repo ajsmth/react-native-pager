@@ -69,8 +69,7 @@ export interface PagerProps {
     prev?: number;
     next?: number;
   };
-
-  clampDrag: {
+  clampDrag?: {
     prev?: number;
     next?: number;
   };
