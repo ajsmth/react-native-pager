@@ -4,15 +4,25 @@ import React, {
   useMemo,
   createContext,
   useContext,
-  cloneElement,
+  memo,
 } from 'react';
-import { StyleSheet, LayoutChangeEvent } from 'react-native';
+import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
   PanGestureHandler,
   State,
   GestureHandlerProperties,
 } from 'react-native-gesture-handler';
+
+type SpringConfig = {
+  damping: Animated.Adaptable<number>;
+  mass: Animated.Adaptable<number>;
+  stiffness: Animated.Adaptable<number>;
+  overshootClamping: Animated.Adaptable<number> | boolean;
+  restSpeedThreshold: Animated.Adaptable<number>;
+  restDisplacementThreshold: Animated.Adaptable<number>;
+  toValue: Animated.Adaptable<number>;
+};
 
 const {
   event,
@@ -39,6 +49,8 @@ const {
   abs,
   lessThan,
   ceil,
+  interpolate,
+  concat,
 } = Animated;
 
 const DEFAULT_SPRING_CONFIG = {
@@ -55,14 +67,15 @@ export interface PagerProps {
   onChange?: (nextIndex: number) => void;
   initialIndex?: number;
   children: React.ReactNode[];
-  springConfig?: any;
+  springConfig?: Partial<SpringConfig>;
+  pageInterpolation?: ViewStyle;
   panProps?: Partial<GestureHandlerProperties>;
   pageSize?: number;
   threshold?: number;
   minIndex?: number;
   maxIndex?: number;
   adjacentChildOffset?: number;
-  style?: any;
+  style?: ViewStyle;
   animatedValue?: Animated.Value<number>;
   type?: 'horizontal' | 'vertical';
   clamp?: {
@@ -88,10 +101,11 @@ function Pager({
   threshold = 0.2,
   minIndex = 0,
   maxIndex: parentMax,
-  adjacentChildOffset,
+  adjacentChildOffset = 5,
   style,
   animatedValue,
   type = 'horizontal',
+  pageInterpolation,
   clamp = {
     prev: REALLY_BIG_NUMBER,
     next: REALLY_BIG_NUMBER,
@@ -101,6 +115,28 @@ function Pager({
     next: REALLY_BIG_NUMBER,
   },
 }: PagerProps) {
+  clamp = useMemo(() => {
+    if (!clamp) {
+      return {
+        prev: REALLY_BIG_NUMBER,
+        next: REALLY_BIG_NUMBER,
+      };
+    }
+
+    return clamp;
+  }, [clamp.prev, clamp.next]);
+
+  clampDrag = useMemo(() => {
+    if (!clampDrag) {
+      return {
+        prev: -REALLY_BIG_NUMBER,
+        next: REALLY_BIG_NUMBER,
+      };
+    }
+
+    return clampDrag;
+  }, [clampDrag.prev, clampDrag.next]);
+
   const dragX = useMemo(() => new Value(0), []);
   const dragY = useMemo(() => new Value(0), []);
   const gestureState = useMemo(() => new Value(-1), []);
@@ -123,10 +159,6 @@ function Pager({
   const onChange = isControlled ? parentOnChange : (_onChange as any);
 
   const numberOfScreens = Children.count(children);
-
-  if (numberOfScreens === 1) {
-    children = [children];
-  }
 
   const maxIndex = parentMax === undefined ? numberOfScreens - 1 : parentMax;
 
@@ -158,10 +190,23 @@ function Pager({
   const width = useMemo(() => new Value(0), []);
   const height = useMemo(() => new Value(0), []);
 
-  const targetDimension = type === 'horizontal' ? 'width' : 'height';
-  const dimension = type === 'vertical' ? height : width;
-  const translateValue = type === 'vertical' ? 'translateY' : 'translateX';
-  const dragValue = type === 'vertical' ? dragY : dragX;
+  const targetDimension = useMemo(
+    () => (type === 'vertical' ? 'height' : 'width'),
+    [type]
+  );
+
+  const dimension = useMemo(() => (type === 'vertical' ? height : width), [
+    type,
+  ]);
+
+  const translateValue = useMemo(
+    () => (type === 'vertical' ? 'translateY' : 'translateX'),
+    [type]
+  );
+
+  const dragValue = useMemo(() => (type === 'vertical' ? dragY : dragX), [
+    type,
+  ]);
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
     width.setValue(layout.width as any);
@@ -189,41 +234,45 @@ function Pager({
     multiply(dimension, pageSize)
   );
 
-  const numberOfPages = ceil(divide(abs(percentDragged), pageSize));
+  const numberOfPagesDragged = ceil(divide(abs(percentDragged), pageSize));
 
-  const nextIndex = min(add(position, numberOfPages), maxIndex);
-  const prevIndex = max(sub(position, numberOfPages), minIndex);
+  const nextIndex = min(add(position, numberOfPagesDragged), maxIndex);
+  const prevIndex = max(sub(position, numberOfPagesDragged), minIndex);
   const shouldTransition = greaterThan(abs(percentDragged), threshold);
 
-  const translation = block([
-    didChange(position, [
-      call([position], ([nextIndex]) => onChange(nextIndex)),
-    ]),
+  const translation = useMemo(
+    () =>
+      block([
+        didChange(position, [
+          call([position], ([nextIndex]) => onChange(nextIndex)),
+        ]),
 
-    cond(
-      eq(gestureState, State.ACTIVE),
-      [
-        cond(clockRunning(clock), stopClock(clock)),
-        cond(swiping, 0, set(dragStart, translationValue)),
-        set(swiping, 1),
-        set(
-          nextPosition,
-          cond(
-            shouldTransition,
-            [cond(lessThan(percentDragged, 0), nextIndex, prevIndex)],
-            position
-          )
+        cond(
+          eq(gestureState, State.ACTIVE),
+          [
+            cond(clockRunning(clock), stopClock(clock)),
+            cond(swiping, 0, set(dragStart, translationValue)),
+            set(swiping, 1),
+            set(
+              nextPosition,
+              cond(
+                shouldTransition,
+                [cond(lessThan(percentDragged, 0), nextIndex, prevIndex)],
+                position
+              )
+            ),
+            set(translationValue, add(clampedDragValue, dragStart)),
+          ],
+
+          [
+            set(swiping, 0),
+            set(position, nextPosition),
+            set(translationValue, runSpring(position)),
+          ]
         ),
-        set(translationValue, add(clampedDragValue, dragStart)),
-      ],
-
-      [
-        set(swiping, 0),
-        set(position, nextPosition),
-        set(translationValue, runSpring(position)),
-      ]
-    ),
-  ]);
+      ]),
+    []
+  );
 
   function runSpring(nextIndex: Animated.Node<number>) {
     const state = {
@@ -234,6 +283,7 @@ function Pager({
     };
 
     const config = {
+      ...DEFAULT_SPRING_CONFIG,
       ...springConfig,
       toValue: new Value(0),
     };
@@ -274,18 +324,6 @@ function Pager({
         )
       : children;
 
-  const inverseTranslate = multiply(translation, -1);
-
-  const minimum = sub(
-    inverseTranslate,
-    multiply(width, clamp.prev || REALLY_BIG_NUMBER)
-  );
-
-  const maximum = add(
-    inverseTranslate,
-    multiply(width, clamp.next || REALLY_BIG_NUMBER)
-  );
-
   const totalDimension = useMemo(() => {
     return multiply(dimension, numberOfScreens);
   }, [dimension, numberOfScreens]);
@@ -307,33 +345,28 @@ function Pager({
               transform: [{ [translateValue]: translation }],
             }}
           >
-            {Children.map(adjacentChildren, (child, index) => {
-              let offset = index;
+            {Children.map(adjacentChildren, (child: any, i) => {
+              let index = i;
 
               if (adjacentChildOffset !== undefined) {
-                offset =
+                index =
                   activeIndex <= adjacentChildOffset
-                    ? index
-                    : activeIndex - adjacentChildOffset + index;
+                    ? i
+                    : activeIndex - adjacentChildOffset + i;
               }
 
-              const pos = multiply(offset, dimension);
-
               return (
-                <Animated.View
-                  style={{
-                    ...StyleSheet.absoluteFillObject,
-                    [targetDimension]: dimension,
-                    zIndex: activeIndex === offset ? 1 : 0,
-                    transform: [
-                      { [translateValue]: min(max(pos, minimum), maximum) },
-                    ],
-                  }}
+                <Page
+                  index={index}
+                  dimension={dimension}
+                  translation={translation}
+                  targetDimension={targetDimension}
+                  translateValue={translateValue}
+                  clamp={clamp}
+                  pageInterpolation={pageInterpolation}
                 >
-                  {cloneElement(child as any, {
-                    active: offset === activeIndex,
-                  })}
-                </Animated.View>
+                  {child}
+                </Page>
               );
             })}
           </Animated.View>
@@ -341,6 +374,120 @@ function Pager({
       </PanGestureHandler>
     </Animated.View>
   );
+}
+
+interface iPage {
+  index: number;
+  dimension: Animated.Value<number>;
+  translation: Animated.Node<number>;
+  targetDimension: 'width' | 'height';
+  translateValue: 'translateX' | 'translateY';
+  clamp: {
+    prev?: number;
+    next?: number;
+  };
+  pageInterpolation: any;
+  children: React.ReactNode;
+}
+
+function _Page({
+  index,
+  dimension,
+  translation,
+  targetDimension,
+  translateValue,
+  clamp,
+  pageInterpolation,
+  children,
+}: iPage) {
+  const inverseTranslate = multiply(translation, -1);
+
+  const minimum = sub(
+    inverseTranslate,
+    multiply(
+      dimension,
+      clamp.prev !== undefined ? clamp.prev : REALLY_BIG_NUMBER
+    )
+  );
+
+  const maximum = add(
+    inverseTranslate,
+    multiply(
+      dimension,
+      clamp.next !== undefined ? clamp.next : REALLY_BIG_NUMBER
+    )
+  );
+
+  const position = multiply(index, dimension);
+  const offset = divide(add(translation, position), max(dimension, 1));
+
+  const defaultStyle = {
+    [targetDimension]: dimension,
+    transform: [{ [translateValue]: min(max(position, minimum), maximum) }],
+  };
+
+  const innerStyle = mapConfigToStyle(offset, index, pageInterpolation);
+  const { zIndex, ...otherStyles } = innerStyle;
+
+  return (
+    <Animated.View
+      style={{
+        ...StyleSheet.absoluteFillObject,
+        ...defaultStyle,
+        zIndex: zIndex || index * -1,
+      }}
+    >
+      <Animated.View style={[{ flex: 1 }, otherStyles]}>
+        {children}
+      </Animated.View>
+    </Animated.View>
+  );
+}
+
+const Page = memo(_Page);
+
+function mapConfigToStyle(
+  offset: any,
+  index: number,
+  pageInterpolation?: any
+): ViewStyle {
+  if (!pageInterpolation) {
+    return {};
+  }
+
+  return Object.keys(pageInterpolation).reduce((styles: any, key: any) => {
+    const currentStyle = pageInterpolation[key];
+
+    if (Array.isArray(currentStyle)) {
+      const _style = currentStyle.map((s: any) =>
+        mapConfigToStyle(offset, index, s)
+      );
+
+      styles[key] = _style;
+      return styles;
+    }
+
+    if (typeof currentStyle === 'object') {
+      let _style;
+      const { unit, ...rest } = currentStyle;
+      if (currentStyle.unit) {
+        _style = concat(interpolate(offset, rest), currentStyle.unit);
+      } else {
+        _style = interpolate(offset, currentStyle);
+      }
+
+      styles[key] = _style;
+      return styles;
+    }
+
+    if (typeof currentStyle === 'function') {
+      const _style = currentStyle(offset, index);
+      styles[key] = _style;
+      return styles;
+    }
+
+    return styles;
+  }, {});
 }
 
 type iPagerContext = [number, (nextIndex: number) => void];
@@ -352,11 +499,17 @@ interface iPagerProvider {
 }
 
 function PagerProvider({ children, initialIndex = 0 }: iPagerProvider) {
-  const [activeIndex, onChange] = useState(initialIndex);
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+
+  function onChange(nextIndex: number) {
+    setActiveIndex(nextIndex);
+  }
 
   return (
     <PagerContext.Provider value={[activeIndex, onChange]}>
-      {children}
+      {typeof children === 'function'
+        ? children({ activeIndex, onChange })
+        : children}
     </PagerContext.Provider>
   );
 }

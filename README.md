@@ -1,9 +1,9 @@
 # react-native-pager
 
-Controllable pager component w/ gesture support for React Native
+Fully controllable, high performance pager component w/ gesture support for React Native
 
 <p align="center">
-  <img src="docs/assets/infinite-pager.gif">
+  <img src="docs/assets/inline-cards.gif" />
 </p>
 
 # Installation
@@ -22,7 +22,19 @@ There are additional steps to setting these up:
 - [react-native-gesture-handler](https://kmagiera.github.io/react-native-gesture-handler/docs/getting-started.html)
 - [react-native-reanimated](https://github.com/kmagiera/react-native-reanimated#installation)
 
-# Example
+# Examples
+
+<p align="center">
+  <img src="docs/assets/kilter-cards.gif" />
+  <img src="docs/assets/swipe-cards.gif" />
+</p>
+
+<p align="center">
+  <img src="docs/assets/stacked-cards.gif" />
+  <img src="docs/assets/inline-cards.gif" />
+</p>
+
+_These examples were inspired by the docs of the awesome [react-native-snap-carousel library](https://github.com/archriss/react-native-snap-carousel)_
 
 From App.js in /example directory
 
@@ -139,14 +151,15 @@ activeIndex?: number;
 onChange?: (nextIndex: number) => void;
 initialIndex?: number;
 children: React.ReactNode[];
-springConfig?: any;
+springConfig?: Partial<SpringConfig>;
+pageInterpolation?: ViewStyle;
 panProps?: Partial<GestureHandlerProperties>;
 pageSize?: number;
 threshold?: number;
 minIndex?: number;
 maxIndex?: number;
 adjacentChildOffset?: number;
-style?: any;
+style?: ViewStyle;
 animatedValue?: Animated.Value<number>;
 type?: 'horizontal' | 'vertical';
 clamp?: {
@@ -157,4 +170,88 @@ clampDrag?: {
   prev?: number;
   next?: number;
 };
+```
+
+## Customization
+
+The default settings for the pager component will be a full screen page that handles horizontal swipes.
+
+You can customize the behaviour of individual cards using the `pageInterpolation` prop. It accepts an object of interpolation configurations for the different properties you want to transform. The interpolation configs can be found in the `react-native-reanimated` docs.
+
+There's some pretty neat stuff you can do with these -- here are some examples for the configs above:
+
+<p align="center">
+  <img src="docs/assets/kilter-cards.gif" />
+</p>
+
+```
+// the numbers we are interpolating are relative to the active card
+// e.g an inputRange value of -1 means it is 1 page to the left of whatever is active.
+
+const kilterCards = {
+  transform: [
+    {
+      scale: {
+        inputRange: [-1, 0, 1],
+        outputRange: [0.95, 1, 0.95],
+      },
+
+      translateY: {
+        inputRange: [-1, 0, 1, 2],
+        outputRange: [0, 0, 10, -15],
+      },
+
+      rotate: {
+        unit: 'deg',
+        inputRange: [-1, 0, 1, 2],
+        outputRange: [-20, 0, -7.5, 5],
+      },
+    },
+  ],
+
+  opacity: {
+    inputRange: [-1, 0, 1, 2, 3],
+    outputRange: [0, 1, 1, 1, 0],
+  },
+};
+
+<Pager clamp={{ next: 0 }} pageInterpolation={kilterCards}>...</Pager>
+```
+
+<p align="center">
+  <img src="docs/assets/swipe-cards.gif" />
+</p>
+
+```
+const swipeCards = {
+  transform: [
+    {
+      scale: {
+        inputRange: [-1, 0, 1],
+        outputRange: [0.95, 1, 0.95],
+        clamp: Extrapolate.EXTEND,
+      },
+
+      translateX: {
+        inputRange: [-1, 0, 1],
+        outputRange: [-150, 0, 0],
+      },
+
+      translateY: {
+        inputRange: [-1, 0, 1],
+        outputRange: [0, 0, 10],
+        clamp: Extrapolate.EXTEND,
+      },
+
+      rotate: {
+        unit: 'deg',
+        inputRange: [-1, 0, 1],
+        outputRange: [-20, 0, 0],
+        clamp: Extrapolate.EXTEND,
+      },
+    },
+  ],
+};
+
+<Pager clamp={{ next: 0 }} pageInterpolation={swipeCards}>...</Pager>
 ```
