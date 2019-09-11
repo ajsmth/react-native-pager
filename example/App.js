@@ -16,6 +16,7 @@ import {
   Alert,
   TouchableOpacity,
   TextInput,
+  ScrollView,
 } from 'react-native';
 
 import Animated from 'react-native-reanimated';
@@ -152,40 +153,205 @@ function Slide({active, offset, i}) {
   );
 }
 
+function Screen({index}) {
+  return (
+    <Animated.View
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors[index % colors.length],
+        marginHorizontal: 5,
+      }}>
+      <Text>{`Screen: ${index}`}</Text>
+    </Animated.View>
+  );
+}
+
+function Tabs({children}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  return (
+    <View style={{flex: 1, borderWidth: StyleSheet.hairlineWidth}}>
+      <Pager
+        activeIndex={activeIndex}
+        onChange={setActiveIndex}
+        style={{flex: 1, overflow: 'hidden', paddingVertical: 5}}>
+        {children}
+      </Pager>
+
+      <View style={{height: 50, flexDirection: 'row'}}>
+        {React.Children.map(children, (c, i) => (
+          <TouchableOpacity
+            onPress={() => setActiveIndex(i)}
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: activeIndex === i ? colors[i] : 'black',
+            }}>
+            <Text style={{color: activeIndex === i ? colors[i] : 'black'}}>
+              {i + 1}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function Stack({children}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  return (
+    <View style={{flex: 1, borderWidth: StyleSheet.hairlineWidth}}>
+      <Pager
+        activeIndex={activeIndex}
+        onChange={setActiveIndex}
+        clamp={{prev: 0.3}}
+        clampDrag={{prev: 0}}
+        style={{flex: 1, overflow: 'hidden', paddingVertical: 5}}>
+        {children}
+      </Pager>
+
+      <View style={{height: 50, flexDirection: 'row'}}>
+        <TouchableOpacity
+          onPress={() =>
+            setActiveIndex(Math.min(activeIndex + 1, children.length - 1))
+          }
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: colors[activeIndex],
+          }}>
+          <Text style={{color: colors[activeIndex]}}>Push</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 const children = Array.from({length: 1000}, (c, i) => <Slide i={i} key={i} />);
 
 const App = () => {
   return (
     <SafeAreaView style={{flex: 1}}>
-      <PagerProvider initialIndex={2}>
-        {({activeIndex, onChange}) => (
-          <>
-            <View
-              style={{
-                width: 200,
-                height: 200,
-                top: 50,
-                marginBottom: 150,
-                alignSelf: 'center',
-              }}>
-              <Pager
-                pageInterpolation={kilterCards}
-                clamp={{
-                  next: 0,
-                }}
-                adjacentChildOffset={3}
-                activeIndex={activeIndex}
-                onChange={onChange}>
-                {children}
-              </Pager>
-            </View>
-            <Buttons activeIndex={activeIndex} setActiveIndex={onChange} />
-          </>
-        )}
-      </PagerProvider>
+      <ScrollView>
+        <View
+          style={{
+            flex: 1,
+            paddingHorizontal: 20,
+          }}>
+          <View style={{overflow: 'hidden'}}>
+            <Heading>Featured</Heading>
+            <HR />
+            <Pager style={{flex: 1, height: 200, paddingVertical: 20}}>
+              <Thumbnail color={colors[3]} />
+              <Thumbnail color={colors[2]} />
+              <Thumbnail color={colors[0]} />
+              <Thumbnail color={colors[1]} />
+              <Thumbnail color={colors[5]} />
+            </Pager>
+
+            <Heading>Browse</Heading>
+            <HR />
+            <Pager
+              pageSize={0.5}
+              style={{height: 300, width: '100%', paddingVertical: 20}}>
+              <ThumbnailGridScreen index={0} />
+              <ThumbnailGridScreen index={4} />
+              <ThumbnailGridScreen index={8} />
+            </Pager>
+
+            <Heading>News & Noteworthy</Heading>
+
+            <Pager style={{width: '75%', height: 150, paddingVertical: 20}}>
+              <Thumbnail color={colors[0]} />
+              <Thumbnail color={colors[1]} />
+              <Thumbnail color={colors[2]} />
+              <Thumbnail color={colors[3]} />
+              <Thumbnail color={colors[4]} />
+            </Pager>
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
+
+function HR() {
+  return <View style={{height: 1, borderWidth: 1}} />;
+}
+
+function Heading({children, size}) {
+  return (
+    <Text style={{fontWeight: 'bold', fontSize: size || 18, marginBottom: 10}}>
+      {children}
+    </Text>
+  );
+}
+
+function ThumbnailGridScreen({index}) {
+  return (
+    <View style={{flex: 1, flexDirection: 'row'}}>
+      <View style={{flex: 1}}>
+        <Thumbnail color={colors[index % colors.length]} />
+        <Thumbnail color={colors[(index + 1) % colors.length]} />
+      </View>
+
+      <View style={{flex: 1}}>
+        <Thumbnail color={colors[(index + 2) % colors.length]} />
+        <Thumbnail color={colors[(index + 3) % colors.length]} />
+      </View>
+    </View>
+  );
+}
+
+function Thumbnail({color}) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        marginHorizontal: 10,
+      }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: color,
+          backgroundColor: color,
+          borderRadius: 4,
+        }}
+      />
+
+      <View
+        style={{
+          paddingVertical: '10%',
+          height: '30%',
+        }}>
+        <View
+          style={{
+            width: '80%',
+            height: 1,
+            backgroundColor: 'lightgrey',
+            marginBottom: '5%',
+            borderRadius: 4,
+          }}
+        />
+        <View
+          style={{
+            width: '40%',
+            height: 1,
+            backgroundColor: 'lightgrey',
+            borderRadius: 4,
+          }}
+        />
+      </View>
+    </View>
+  );
+}
 
 function Buttons({activeIndex, setActiveIndex}) {
   return (

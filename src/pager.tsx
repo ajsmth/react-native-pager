@@ -161,7 +161,10 @@ function Pager({
 
   const numberOfScreens = Children.count(children);
 
-  const maxIndex = parentMax === undefined ? numberOfScreens - 1 : parentMax;
+  const maxIndex =
+    parentMax === undefined
+      ? Math.ceil((numberOfScreens - 1) / pageSize)
+      : parentMax;
 
   const handleGesture = memoize(
     event(
@@ -227,14 +230,11 @@ function Pager({
   const clampedDragNext =
     clampDrag.next !== undefined ? clampDrag.next : REALLY_BIG_NUMBER;
 
-  const clampedDragValue = min(
-    max(clampedDragPrev, dragValue),
-    clampedDragNext
+  const clampedDragValue = memoize(
+    min(max(clampedDragPrev, dragValue), clampedDragNext)
   );
 
-  const percentDragged = memoize(
-    divide(clampedDragValue, multiply(dimension, pageSize))
-  );
+  const percentDragged = memoize(divide(clampedDragValue, dimension));
 
   const numberOfPagesDragged = memoize(
     ceil(divide(abs(percentDragged), pageSize))
@@ -442,7 +442,7 @@ function _Page({
       style={{
         ...StyleSheet.absoluteFillObject,
         ...defaultStyle,
-        zIndex: zIndex || index * -1,
+        zIndex: zIndex || (clamp.prev && clamp.prev > 0) ? index : index * -1,
       }}
     >
       <Animated.View style={[{ flex: 1 }, otherStyles]}>
