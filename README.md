@@ -147,28 +147,28 @@ import { Pager } from 'react-native-pager-component'
 
 Props
 --------
-activeIndex?: number;
-onChange?: (nextIndex: number) => void;
-initialIndex?: number;
+activeIndex?: number; - active screen
+onChange?: (nextIndex: number) => void; - active screen changed
+initialIndex?: number; - initial active screen
 children: React.ReactNode[];
-springConfig?: Partial<SpringConfig>;
-pageInterpolation?: ViewStyle;
-panProps?: Partial<GestureHandlerProperties>;
-pageSize?: number;
-threshold?: number;
-minIndex?: number;
-maxIndex?: number;
-adjacentChildOffset?: number;
-style?: ViewStyle;
-animatedValue?: Animated.Value<number>;
-type?: 'horizontal' | 'vertical';
+springConfig?: Partial<SpringConfig> - configuration for spring transitions on swipe / snap
+pageInterpolation?: ViewStyle - see below - configuration for individual page transforms
+panProps?: Partial<GestureHandlerProperties> - configuration for <PanGestureHandler />
+pageSize?: number; - percentage (0 - 1), how far should it page on index change
+threshold?: number; - percentage (0 - 1), how far should the user drag before snapping to next / prev
+minIndex?: number; - minimum index to swipe to (default 0)
+maxIndex?: number; - maximum index to swipe to (default children.length - 1)
+adjacentChildOffset?: number; - the number of children adjacent to the activeIndex to render
+style?: ViewStyle; - container style for the pager
+animatedValue?: Animated.Value<number>; - total translation value of the pager
+type?: 'horizontal' | 'vertical'; - target horizontal swipes or vertical swipes
 clamp?: {
-  prev?: number;
-  next?: number;
+  prev?: number; - percentage (0 - 1) - clamp children to the left of the active screen
+  next?: number; - percentage (0 - 1) - clamp children to the right of the active screen
 };
 clampDrag?: {
-  prev?: number;
-  next?: number;
+  prev?: number; - percentage (0 - 1) - maximum drag distance for previous screens
+  next?: number; - percentage (0 - 1) - maximum drag distance for next screens
 };
 ```
 

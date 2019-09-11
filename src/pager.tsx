@@ -5,6 +5,7 @@ import React, {
   createContext,
   useContext,
   memo,
+  useRef,
 } from 'react';
 import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -137,19 +138,19 @@ function Pager({
     return clampDrag;
   }, [clampDrag.prev, clampDrag.next]);
 
-  const dragX = useMemo(() => new Value(0), []);
-  const dragY = useMemo(() => new Value(0), []);
-  const gestureState = useMemo(() => new Value(-1), []);
+  const dragX = memoize(new Value(0));
+  const dragY = memoize(new Value(0));
+  const gestureState = memoize(new Value(-1));
 
-  const clock = useMemo(() => new Clock(), []);
+  const clock = memoize(new Clock());
 
-  const swiping = useMemo(() => new Value(0), []);
-  const dragStart = useMemo(() => new Value(0), []);
+  const swiping = memoize(new Value(0));
+  const dragStart = memoize(new Value(0));
 
-  const [translationValue] = useState(animatedValue || new Value(0));
+  const translationValue = memoize(animatedValue || new Value(0));
 
-  const position = useMemo(() => new Value(initialIndex), []);
-  const nextPosition = useMemo(() => new Value(0), []);
+  const position = memoize(new Value(initialIndex));
+  const nextPosition = memoize(new Value(0));
 
   const isControlled = parentActiveIndex !== undefined;
 
@@ -162,16 +163,18 @@ function Pager({
 
   const maxIndex = parentMax === undefined ? numberOfScreens - 1 : parentMax;
 
-  const handleGesture = event(
-    [
-      {
-        nativeEvent: {
-          translationX: dragX,
-          translationY: dragY,
+  const handleGesture = memoize(
+    event(
+      [
+        {
+          nativeEvent: {
+            translationX: dragX,
+            translationY: dragY,
+          },
         },
-      },
-    ],
-    { useNativeDriver: true }
+      ],
+      { useNativeDriver: true }
+    )
   );
 
   const handleStateChange = event(
@@ -187,8 +190,8 @@ function Pager({
     }
   );
 
-  const width = useMemo(() => new Value(0), []);
-  const height = useMemo(() => new Value(0), []);
+  const width = memoize(new Value(0));
+  const height = memoize(new Value(0));
 
   const targetDimension = useMemo(
     () => (type === 'vertical' ? 'height' : 'width'),
@@ -229,49 +232,48 @@ function Pager({
     clampedDragNext
   );
 
-  const percentDragged = divide(
-    clampedDragValue,
-    multiply(dimension, pageSize)
+  const percentDragged = memoize(
+    divide(clampedDragValue, multiply(dimension, pageSize))
   );
 
-  const numberOfPagesDragged = ceil(divide(abs(percentDragged), pageSize));
+  const numberOfPagesDragged = memoize(
+    ceil(divide(abs(percentDragged), pageSize))
+  );
 
-  const nextIndex = min(add(position, numberOfPagesDragged), maxIndex);
-  const prevIndex = max(sub(position, numberOfPagesDragged), minIndex);
-  const shouldTransition = greaterThan(abs(percentDragged), threshold);
+  const nextIndex = memoize(min(add(position, numberOfPagesDragged), maxIndex));
+  const prevIndex = memoize(max(sub(position, numberOfPagesDragged), minIndex));
+  const shouldTransition = memoize(greaterThan(abs(percentDragged), threshold));
 
-  const translation = useMemo(
-    () =>
-      block([
-        didChange(position, [
-          call([position], ([nextIndex]) => onChange(nextIndex)),
-        ]),
-
-        cond(
-          eq(gestureState, State.ACTIVE),
-          [
-            cond(clockRunning(clock), stopClock(clock)),
-            cond(swiping, 0, set(dragStart, translationValue)),
-            set(swiping, 1),
-            set(
-              nextPosition,
-              cond(
-                shouldTransition,
-                [cond(lessThan(percentDragged, 0), nextIndex, prevIndex)],
-                position
-              )
-            ),
-            set(translationValue, add(clampedDragValue, dragStart)),
-          ],
-
-          [
-            set(swiping, 0),
-            set(position, nextPosition),
-            set(translationValue, runSpring(position)),
-          ]
-        ),
+  const translation = memoize(
+    block([
+      didChange(position, [
+        call([position], ([nextIndex]) => onChange(nextIndex)),
       ]),
-    []
+
+      cond(
+        eq(gestureState, State.ACTIVE),
+        [
+          cond(clockRunning(clock), stopClock(clock)),
+          cond(swiping, 0, set(dragStart, translationValue)),
+          set(swiping, 1),
+          set(
+            nextPosition,
+            cond(
+              shouldTransition,
+              [cond(lessThan(percentDragged, 0), nextIndex, prevIndex)],
+              position
+            )
+          ),
+          set(translationValue, add(clampedDragValue, dragStart)),
+        ],
+
+        [
+          set(swiping, 0),
+          set(position, nextPosition),
+          set(translationValue, runSpring(position)),
+        ]
+      ),
+    ])
   );
 
   function runSpring(nextIndex: Animated.Node<number>) {
@@ -400,33 +402,39 @@ function _Page({
   pageInterpolation,
   children,
 }: iPage) {
-  const inverseTranslate = multiply(translation, -1);
+  const inverseTranslate = memoize(multiply(translation, -1));
 
-  const minimum = sub(
-    inverseTranslate,
-    multiply(
-      dimension,
-      clamp.prev !== undefined ? clamp.prev : REALLY_BIG_NUMBER
+  const minimum = memoize(
+    sub(
+      inverseTranslate,
+      multiply(
+        dimension,
+        clamp.prev !== undefined ? clamp.prev : REALLY_BIG_NUMBER
+      )
     )
   );
 
-  const maximum = add(
-    inverseTranslate,
-    multiply(
-      dimension,
-      clamp.next !== undefined ? clamp.next : REALLY_BIG_NUMBER
+  const maximum = memoize(
+    add(
+      inverseTranslate,
+      multiply(
+        dimension,
+        clamp.next !== undefined ? clamp.next : REALLY_BIG_NUMBER
+      )
     )
   );
 
-  const position = multiply(index, dimension);
-  const offset = divide(add(translation, position), max(dimension, 1));
+  const position = memoize(multiply(index, dimension));
+  const offset = memoize(divide(add(translation, position), max(dimension, 1)));
 
   const defaultStyle = {
     [targetDimension]: dimension,
     transform: [{ [translateValue]: min(max(position, minimum), maximum) }],
   };
 
-  const innerStyle = mapConfigToStyle(offset, index, pageInterpolation);
+  const innerStyle = memoize(
+    mapConfigToStyle(offset, index, pageInterpolation)
+  );
   const { zIndex, ...otherStyles } = innerStyle;
 
   return (
@@ -488,6 +496,11 @@ function mapConfigToStyle(
 
     return styles;
   }, {});
+}
+
+function memoize(value: any): any {
+  const ref = useRef(value);
+  return ref.current;
 }
 
 type iPagerContext = [number, (nextIndex: number) => void];

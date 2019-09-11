@@ -15,6 +15,7 @@ import {
   Button,
   Alert,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 
 import Animated from 'react-native-reanimated';
@@ -168,10 +169,9 @@ const App = () => {
                 alignSelf: 'center',
               }}>
               <Pager
-                pageInterpolation={kaleidoscope}
+                pageInterpolation={kilterCards}
                 clamp={{
                   next: 0,
-                  prev: 0,
                 }}
                 adjacentChildOffset={3}
                 activeIndex={activeIndex}
