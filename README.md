@@ -24,6 +24,8 @@ There are additional steps to setting these up:
 
 # Examples
 
+_These examples were inspired by the docs of the awesome [react-native-snap-carousel library](https://github.com/archriss/react-native-snap-carousel)_
+
 <p align="center">
   <img src="docs/assets/kilter-cards.gif" />
   <img src="docs/assets/swipe-cards.gif" />
@@ -34,7 +36,19 @@ There are additional steps to setting these up:
   <img src="docs/assets/inline-cards.gif" />
 </p>
 
-_These examples were inspired by the docs of the awesome [react-native-snap-carousel library](https://github.com/archriss/react-native-snap-carousel)_
+### Basic Pager
+
+```
+<Pager initialIndex={2}>
+  <Screen />
+  <Screen />
+  <Screen />
+  <Screen />
+  <Screen />
+</Pager>
+```
+
+### Controlled Pager
 
 From App.js in /example directory
 
@@ -66,38 +80,39 @@ const colors = [
   'salmon',
 ];
 
-const App = () => {
-  const [activeIndex, setActiveIndex] = useState(0);
+const screens = Array.from({length: 10}, (c, i) => (
+  <View
+    key={i}
+    style={{
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors[i % colors.length],
+    }}>
+    <Text>{`Screen: ${i}`}</Text>
+    <Button title="Hello" onPress={() => Alert.alert('Joe')} />
+  </View>
+));
 
-  const children = Array.from({length: activeIndex + 2}, (c, i) => (
-    <View
-      key={i}
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors[i % colors.length],
-      }}>
-      <Text>{`Screen: ${i}`}</Text>
-      <Button title="Hello" onPress={() => Alert.alert('Joe')} />
-    </View>
-  ));
+
+const App = () => {
+  const [activeIndex, onChange] = useState(0);
 
   return (
     <SafeAreaView style={{flex: 1}}>
       <Pager
         activeIndex={activeIndex}
-        onChange={setActiveIndex}
+        onChange={onChange}
         adjacentChildOffset={2}>
-        {children}
+        {screens}
       </Pager>
 
-      <Buttons activeIndex={activeIndex} setActiveIndex={setActiveIndex} />
+      <Buttons activeIndex={activeIndex} setActiveIndex={onChange} />
     </SafeAreaView>
   );
 };
 
-function Buttons({activeIndex, setActiveIndex}) {
+function Buttons({activeIndex, onChange}) {
   return (
     <View style={{height: 75, width: '100%'}}>
       <Text
@@ -117,7 +132,7 @@ function Buttons({activeIndex, setActiveIndex}) {
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          onPress={() => setActiveIndex(activeIndex - 1)}>
+          onPress={() => onChange(activeIndex - 1)}>
           <Text>{`<`}</Text>
         </TouchableOpacity>
 
@@ -129,7 +144,7 @@ function Buttons({activeIndex, setActiveIndex}) {
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          onPress={() => setActiveIndex(activeIndex + 1)}>
+          onPress={() => onChange(activeIndex + 1)}>
           <Text>{`>`}</Text>
         </TouchableOpacity>
       </View>
@@ -277,12 +292,16 @@ const kilterCards = {
         inputRange: [-1, 0, 1],
         outputRange: [0.95, 1, 0.95],
       },
+    },
 
+    {
       translateY: {
         inputRange: [-1, 0, 1, 2],
         outputRange: [0, 0, 10, -15],
       },
+    },
 
+    {
       rotate: {
         unit: 'deg',
         inputRange: [-1, 0, 1, 2],
@@ -296,6 +315,7 @@ const kilterCards = {
     outputRange: [0, 1, 1, 1, 0],
   },
 };
+
 
 <Pager clamp={{ next: 0 }} pageInterpolation={kilterCards}>...</Pager>
 ```
@@ -313,18 +333,22 @@ const swipeCards = {
         outputRange: [0.95, 1, 0.95],
         clamp: Extrapolate.EXTEND,
       },
-
+    },
+    {
       translateX: {
         inputRange: [-1, 0, 1],
         outputRange: [-150, 0, 0],
       },
-
+    },
+    {
       translateY: {
         inputRange: [-1, 0, 1],
         outputRange: [0, 0, 10],
         clamp: Extrapolate.EXTEND,
       },
+    },
 
+    {
       rotate: {
         unit: 'deg',
         inputRange: [-1, 0, 1],

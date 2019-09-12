@@ -87,18 +87,22 @@ const swipeCards = {
         outputRange: [0.95, 1, 0.95],
         clamp: Extrapolate.EXTEND,
       },
-
+    },
+    {
       translateX: {
         inputRange: [-1, 0, 1],
         outputRange: [-150, 0, 0],
       },
-
+    },
+    {
       translateY: {
         inputRange: [-1, 0, 1],
         outputRange: [0, 0, 10],
         clamp: Extrapolate.EXTEND,
       },
+    },
 
+    {
       rotate: {
         unit: 'deg',
         inputRange: [-1, 0, 1],
@@ -116,12 +120,16 @@ const kilterCards = {
         inputRange: [-1, 0, 1],
         outputRange: [0.95, 1, 0.95],
       },
+    },
 
+    {
       translateY: {
         inputRange: [-1, 0, 1, 2],
         outputRange: [0, 0, 10, -15],
       },
+    },
 
+    {
       rotate: {
         unit: 'deg',
         inputRange: [-1, 0, 1, 2],
@@ -137,7 +145,6 @@ const kilterCards = {
 };
 
 function Slide({active, offset, i}) {
-  const [activeIndex] = usePager();
   return (
     <Animated.View
       style={{
@@ -237,47 +244,20 @@ function Stack({children}) {
 const children = Array.from({length: 1000}, (c, i) => <Slide i={i} key={i} />);
 
 const App = () => {
+  const [activeIndex, onChange] = useState(2);
+
   return (
     <SafeAreaView style={{flex: 1}}>
-      <ScrollView>
-        <View
-          style={{
-            flex: 1,
-            paddingHorizontal: 20,
-          }}>
-          <View style={{overflow: 'hidden'}}>
-            <Heading>Featured</Heading>
-            <HR />
-            <Pager style={{flex: 1, height: 200, paddingVertical: 20}}>
-              <Thumbnail color={colors[3]} />
-              <Thumbnail color={colors[2]} />
-              <Thumbnail color={colors[0]} />
-              <Thumbnail color={colors[1]} />
-              <Thumbnail color={colors[5]} />
-            </Pager>
+      <Pager
+        activeIndex={activeIndex}
+        onChange={onChange}
+        style={{width: 200, height: 200, alignSelf: 'center', marginBottom: 20}}
+        clamp={{next: 0}}
+        pageInterpolation={swipeCards}>
+        {children}
+      </Pager>
 
-            <Heading>Browse</Heading>
-            <HR />
-            <Pager
-              pageSize={0.5}
-              style={{height: 300, width: '100%', paddingVertical: 20}}>
-              <ThumbnailGridScreen index={0} />
-              <ThumbnailGridScreen index={4} />
-              <ThumbnailGridScreen index={8} />
-            </Pager>
-
-            <Heading>News & Noteworthy</Heading>
-
-            <Pager style={{width: '75%', height: 150, paddingVertical: 20}}>
-              <Thumbnail color={colors[0]} />
-              <Thumbnail color={colors[1]} />
-              <Thumbnail color={colors[2]} />
-              <Thumbnail color={colors[3]} />
-              <Thumbnail color={colors[4]} />
-            </Pager>
-          </View>
-        </View>
-      </ScrollView>
+      <Buttons activeIndex={activeIndex} onChange={onChange} />
     </SafeAreaView>
   );
 };
@@ -353,7 +333,7 @@ function Thumbnail({color}) {
   );
 }
 
-function Buttons({activeIndex, setActiveIndex}) {
+function Buttons({activeIndex, onChange}) {
   return (
     <View style={{height: 75, width: '100%'}}>
       <Text
@@ -379,7 +359,7 @@ function Buttons({activeIndex, setActiveIndex}) {
             justifyContent: 'center',
             width: 150,
           }}
-          onPress={() => setActiveIndex(activeIndex - 1)}>
+          onPress={() => onChange(activeIndex - 1)}>
           <Text>{`<`}</Text>
         </TouchableOpacity>
 
@@ -391,7 +371,7 @@ function Buttons({activeIndex, setActiveIndex}) {
             justifyContent: 'center',
             width: 150,
           }}
-          onPress={() => setActiveIndex(activeIndex + 1)}>
+          onPress={() => onChange(activeIndex + 1)}>
           <Text>{`>`}</Text>
         </TouchableOpacity>
       </View>

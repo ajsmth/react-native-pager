@@ -180,17 +180,19 @@ function Pager({
     )
   );
 
-  const handleStateChange = event(
-    [
-      {
-        nativeEvent: {
-          state: gestureState,
+  const handleStateChange = memoize(
+    event(
+      [
+        {
+          nativeEvent: {
+            state: gestureState,
+          },
         },
-      },
-    ],
-    {
-      useNativeDriver: true,
-    }
+      ],
+      {
+        useNativeDriver: true,
+      }
+    )
   );
 
   const width = memoize(new Value(0));
@@ -531,7 +533,7 @@ function usePager(): iPagerContext {
   const context = useContext(PagerContext);
 
   if (context === undefined) {
-    throw new Error('usePager must be used within a <PagerProvier />');
+    throw new Error('usePager must be used within a <PagerProvider />');
   }
 
   return context;
