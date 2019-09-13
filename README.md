@@ -12,7 +12,7 @@ Fully controllable, high performance pager component w/ gesture support for Reac
 
 If you're using expo, all dependencies are already installed by default. If not, you'll need to install two dependencies along with this library:
 
-```
+```bash
 yarn add react-native-gesture-handler
 yarn add react-native-reanimated
 ```
@@ -38,7 +38,7 @@ _These examples were inspired by the docs of the awesome [react-native-snap-caro
 
 ### Basic Pager
 
-```
+```javascript
 <Pager initialIndex={2}>
   <Screen />
   <Screen />
@@ -52,7 +52,7 @@ _These examples were inspired by the docs of the awesome [react-native-snap-caro
 
 From App.js in /example directory
 
-```
+```javascript
 // App.js
 import React, {useState} from 'react';
 import {
@@ -157,7 +157,7 @@ function Buttons({activeIndex, onChange}) {
 
 ## Pager
 
-```
+```typescript
 import { Pager } from 'react-native-pager-component'
 
 Props
@@ -195,7 +195,7 @@ Tab and Stack configurations are pretty straightforward to get setup:
   <img src="docs/assets/stack-config.gif" />
 </p>
 
-```
+```javascript
 function Stack({children}) {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -234,7 +234,7 @@ function Stack({children}) {
   <img src="docs/assets/tabs-config.gif" />
 </p>
 
-```
+```javascript
 function Tabs({children}) {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -281,7 +281,7 @@ There's some pretty neat stuff you can do with these -- here are some examples f
   <img src="docs/assets/kilter-cards.gif" />
 </p>
 
-```
+```javascript
 // the numbers we are interpolating are relative to the active card
 // e.g an inputRange value of -1 means it is 1 page to the left of whatever is active.
 
@@ -324,7 +324,7 @@ const kilterCards = {
   <img src="docs/assets/swipe-cards.gif" />
 </p>
 
-```
+```javascript
 const swipeCards = {
   transform: [
     {
