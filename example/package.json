@@ -10,7 +10,7 @@
     "android": "react-native run-android"
   },
   "dependencies": {
-    "@crowdlinker/react-native-pager": "^0.1.2",
+    "@crowdlinker/react-native-pager": "^0.1.4",
     "react": "16.8.6",
     "react-native": "0.60.5",
     "react-native-gesture-handler": "^1.4.1",
