@@ -50,7 +50,7 @@ interface iInterpolationConfig extends InterpolationConfig {
 
 type iPageInterpolation = {
   [animatedProp: string]:
-    | iPageInterpolation[]
+    | iInterpolationConfig[]
     | iInterpolationConfig
     | InterpolationFn;
 };
@@ -70,7 +70,6 @@ const {
   spring,
   startClock,
   multiply,
-  onChange: didChange,
   neq,
   sub,
   call,
@@ -129,7 +128,7 @@ function Pager({
   springConfig = DEFAULT_SPRING_CONFIG,
   panProps = {},
   pageSize = 1,
-  threshold = 0.2,
+  threshold = 0.1,
   minIndex = 0,
   maxIndex: parentMax,
   adjacentChildOffset = 5,
@@ -276,6 +275,11 @@ function Pager({
   const prevIndex = memoize(max(sub(position, numberOfPagesDragged), minIndex));
   const shouldTransition = memoize(greaterThan(abs(percentDragged), threshold));
 
+  const page = useMemo(() => multiply(dimension, pageSize), [
+    dimension,
+    pageSize,
+  ]);
+
   const runSpring = memoize((nextIndex: Animated.Node<number>) => {
     const state = {
       finished: new Value(0),
@@ -290,7 +294,6 @@ function Pager({
       toValue: new Value(0),
     };
 
-    const page = multiply(dimension, pageSize);
     const nextPosition = multiply(nextIndex, page, -1);
 
     return block([
@@ -321,9 +324,6 @@ function Pager({
 
   const translation = memoize(
     block([
-      didChange(position, [
-        call([position], ([nextIndex]) => onChange(nextIndex)),
-      ]),
       cond(
         eq(gestureState, State.ACTIVE),
         [
@@ -342,8 +342,14 @@ function Pager({
         ],
 
         [
+          cond(neq(position, nextPosition), [
+            set(position, nextPosition),
+            cond(
+              swiping,
+              call([position], ([nextIndex]) => onChange(nextIndex))
+            ),
+          ]),
           set(swiping, 0),
-          set(position, nextPosition),
           set(translationValue, runSpring(position)),
         ]
       ),
@@ -392,8 +398,6 @@ function Pager({
     <Animated.View style={style || { flex: 1 }} onLayout={handleLayout}>
       <PanGestureHandler
         {...panProps}
-        activeOffsetX={[-20, 20]}
-        failOffsetY={[-20, 20]}
         onGestureEvent={handleGesture}
         onHandlerStateChange={handleStateChange}
       >
