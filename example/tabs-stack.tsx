@@ -3,8 +3,8 @@ import {StyleSheet, TouchableOpacity, View, Text} from 'react-native';
 import {Pager} from '@crowdlinker/react-native-pager';
 
 const colors = [
-  'coral',
   'aquamarine',
+  'coral',
   'gold',
   'cadetblue',
   'crimson',
@@ -13,12 +13,26 @@ const colors = [
   'salmon',
 ];
 
+const stackInterpolation = {
+  zIndex: offset => offset,
+
+  transform: [
+    {
+      scale: {
+        inputRange: [-1, 0, 1],
+        outputRange: [0.95, 1, 0.95],
+      },
+    },
+  ],
+};
+
 function Stack({children}) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
     <View style={{flex: 1, borderWidth: StyleSheet.hairlineWidth}}>
       <Pager
+        pageInterpolation={stackInterpolation}
         activeIndex={activeIndex}
         onChange={setActiveIndex}
         clamp={{prev: 0.3}}

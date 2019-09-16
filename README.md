@@ -54,7 +54,7 @@ From App.js in /example directory
 
 ```javascript
 // App.js
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -67,7 +67,7 @@ import {
 
 console.disableYellowBox = true;
 
-import {Pager} from '../src';
+import { Pager } from '../src';
 
 const colors = [
   'coral',
@@ -80,7 +80,7 @@ const colors = [
   'salmon',
 ];
 
-const screens = Array.from({length: 10}, (c, i) => (
+const screens = Array.from({ length: 10 }, (c, i) => (
   <View
     key={i}
     style={{
@@ -88,22 +88,23 @@ const screens = Array.from({length: 10}, (c, i) => (
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: colors[i % colors.length],
-    }}>
+    }}
+  >
     <Text>{`Screen: ${i}`}</Text>
     <Button title="Hello" onPress={() => Alert.alert('Joe')} />
   </View>
 ));
 
-
 const App = () => {
   const [activeIndex, onChange] = useState(0);
 
   return (
-    <SafeAreaView style={{flex: 1}}>
+    <SafeAreaView style={{ flex: 1 }}>
       <Pager
         activeIndex={activeIndex}
         onChange={onChange}
-        adjacentChildOffset={2}>
+        adjacentChildOffset={2}
+      >
         {screens}
       </Pager>
 
@@ -112,17 +113,18 @@ const App = () => {
   );
 };
 
-function Buttons({activeIndex, onChange}) {
+function Buttons({ activeIndex, onChange }) {
   return (
-    <View style={{height: 75, width: '100%'}}>
+    <View style={{ height: 75, width: '100%' }}>
       <Text
         style={{
           fontSize: 16,
           height: 25,
           textAlign: 'center',
-        }}>{`activeIndex: ${activeIndex}`}</Text>
+        }}
+      >{`activeIndex: ${activeIndex}`}</Text>
 
-      <View style={{flex: 1, flexDirection: 'row'}}>
+      <View style={{ flex: 1, flexDirection: 'row' }}>
         <TouchableOpacity
           title="Dec"
           style={{
@@ -132,7 +134,8 @@ function Buttons({activeIndex, onChange}) {
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          onPress={() => onChange(activeIndex - 1)}>
+          onPress={() => onChange(activeIndex - 1)}
+        >
           <Text>{`<`}</Text>
         </TouchableOpacity>
 
@@ -144,7 +147,8 @@ function Buttons({activeIndex, onChange}) {
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          onPress={() => onChange(activeIndex + 1)}>
+          onPress={() => onChange(activeIndex + 1)}
+        >
           <Text>{`>`}</Text>
         </TouchableOpacity>
       </View>
@@ -181,10 +185,6 @@ clamp?: {
   prev?: number; - percentage (0 - 1) - clamp children to the left of the active screen
   next?: number; - percentage (0 - 1) - clamp children to the right of the active screen
 };
-clampDrag?: {
-  prev?: number; - percentage (0 - 1) - maximum drag distance for previous screens
-  next?: number; - percentage (0 - 1) - maximum drag distance for next screens
-};
 ```
 
 ## Tabs and Stack
@@ -196,21 +196,36 @@ Tab and Stack configurations are pretty straightforward to get setup:
 </p>
 
 ```javascript
-function Stack({children}) {
+const stackInterpolation = {
+  zIndex: offset => offset,
+
+  transform: [
+    {
+      scale: {
+        inputRange: [-1, 0, 1],
+        outputRange: [0.95, 1, 0.95],
+      },
+    },
+  ],
+};
+
+function Stack({ children }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
-    <View style={{flex: 1, borderWidth: StyleSheet.hairlineWidth}}>
+    <View style={{ flex: 1, borderWidth: StyleSheet.hairlineWidth }}>
       <Pager
+        pageInterpolation={stackInterpolation}
         activeIndex={activeIndex}
         onChange={setActiveIndex}
-        clamp={{prev: 0.3}}
-        clampDrag={{prev: 0}}
-        style={{flex: 1, overflow: 'hidden', paddingVertical: 5}}>
+        clamp={{ prev: 0.3 }}
+        clampDrag={{ prev: 0 }}
+        style={{ flex: 1, overflow: 'hidden', paddingVertical: 5 }}
+      >
         {children}
       </Pager>
 
-      <View style={{height: 50, flexDirection: 'row'}}>
+      <View style={{ height: 50, flexDirection: 'row' }}>
         <TouchableOpacity
           onPress={() =>
             setActiveIndex(Math.min(activeIndex + 1, children.length - 1))
@@ -221,8 +236,9 @@ function Stack({children}) {
             alignItems: 'center',
             borderWidth: 1,
             borderColor: colors[activeIndex],
-          }}>
-          <Text style={{color: colors[activeIndex]}}>Push</Text>
+          }}
+        >
+          <Text style={{ color: colors[activeIndex] }}>Push</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -235,19 +251,20 @@ function Stack({children}) {
 </p>
 
 ```javascript
-function Tabs({children}) {
+function Tabs({ children }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
-    <View style={{flex: 1, borderWidth: StyleSheet.hairlineWidth}}>
+    <View style={{ flex: 1, borderWidth: StyleSheet.hairlineWidth }}>
       <Pager
         activeIndex={activeIndex}
         onChange={setActiveIndex}
-        style={{flex: 1, overflow: 'hidden', paddingVertical: 5}}>
+        style={{ flex: 1, overflow: 'hidden', paddingVertical: 5 }}
+      >
         {children}
       </Pager>
 
-      <View style={{height: 50, flexDirection: 'row'}}>
+      <View style={{ height: 50, flexDirection: 'row' }}>
         {React.Children.map(children, (c, i) => (
           <TouchableOpacity
             onPress={() => setActiveIndex(i)}
@@ -257,8 +274,9 @@ function Tabs({children}) {
               alignItems: 'center',
               borderWidth: 1,
               borderColor: activeIndex === i ? colors[i] : 'black',
-            }}>
-            <Text style={{color: activeIndex === i ? colors[i] : 'black'}}>
+            }}
+          >
+            <Text style={{ color: activeIndex === i ? colors[i] : 'black' }}>
               {i + 1}
             </Text>
           </TouchableOpacity>
@@ -316,8 +334,9 @@ const kilterCards = {
   },
 };
 
-
-<Pager clamp={{ next: 0 }} pageInterpolation={kilterCards}>...</Pager>
+<Pager clamp={{ next: 0 }} pageInterpolation={kilterCards}>
+  ...
+</Pager>;
 ```
 
 <p align="center">
@@ -341,13 +360,12 @@ const swipeCards = {
       },
     },
     {
-      translateY: {
-        inputRange: [-1, 0, 1],
-        outputRange: [0, 0, 10],
-        clamp: Extrapolate.EXTEND,
-      },
+      // you can pass a function as a transformer -- offset in this case will represent
+      // the distance a screen is from the active screen
+      // e.g -1 means 1 to the left, 4 means 4 to the right
+      translateY: (offset: Animated.Value<number>) =>
+        Animated.multiply(offset, 10),
     },
-
     {
       rotate: {
         unit: 'deg',
@@ -357,7 +375,12 @@ const swipeCards = {
       },
     },
   ],
+
+  // any Animated[fn] can be used in these functions
+  zIndex: offset => floor(divide(offset, -1)),
 };
 
-<Pager clamp={{ next: 0 }} pageInterpolation={swipeCards}>...</Pager>
+<Pager clamp={{ next: 0 }} pageInterpolation={swipeCards}>
+  ...
+</Pager>;
 ```

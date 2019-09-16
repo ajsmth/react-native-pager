@@ -46,7 +46,9 @@ function Slide({i}) {
   );
 }
 
-const children = Array.from({length: 1000}, (c, i) => <Slide i={i} key={i} />);
+import {Stack, Tabs} from './tabs-stack';
+
+const children = Array.from({length: 3}, (c, i) => <Slide i={i} key={i} />);
 
 const App = () => {
   const [activeIndex, setActiveIndex] = useState(2);
@@ -57,16 +59,7 @@ const App = () => {
 
   return (
     <SafeAreaView style={{flex: 1, justifyContent: 'center'}}>
-      <Pager
-        activeIndex={activeIndex}
-        onChange={onChange}
-        style={{width: 200, height: 200, alignSelf: 'center', marginBottom: 20}}
-        clamp={{next: 0}}
-        pageInterpolation={kilterCards}>
-        {children}
-      </Pager>
-
-      <Buttons activeIndex={activeIndex} onChange={onChange} />
+      <Tabs>{children}</Tabs>
     </SafeAreaView>
   );
 };
@@ -176,7 +169,6 @@ const swipeCards = {
       translateY: (offset: Animated.Value<number>) =>
         Animated.multiply(offset, 10),
     },
-
     {
       rotate: {
         unit: 'deg',
