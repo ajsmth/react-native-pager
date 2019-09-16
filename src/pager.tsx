@@ -25,6 +25,36 @@ type SpringConfig = {
   toValue: Animated.Adaptable<number>;
 };
 
+// copied from react-native-reanimated for now, can't get the export
+export enum Extrapolate {
+  EXTEND = 'extend',
+  CLAMP = 'clamp',
+  IDENTITY = 'identity',
+}
+
+interface InterpolationConfig {
+  inputRange: ReadonlyArray<Animated.Adaptable<number>>;
+  outputRange: ReadonlyArray<Animated.Adaptable<number>>;
+  extrapolate?: Extrapolate;
+  extrapolateLeft?: Extrapolate;
+  extrapolateRight?: Extrapolate;
+}
+
+type InterpolationFn = (
+  offset: Animated.Value<number>
+) => Animated.Value<number>;
+
+interface iInterpolationConfig extends InterpolationConfig {
+  unit?: 'deg' | 'rad';
+}
+
+type iPageInterpolation = {
+  [animatedProp: string]:
+    | iPageInterpolation[]
+    | iInterpolationConfig
+    | InterpolationFn;
+};
+
 const {
   event,
   block,
@@ -69,7 +99,7 @@ export interface PagerProps {
   initialIndex?: number;
   children: React.ReactNode[];
   springConfig?: Partial<SpringConfig>;
-  pageInterpolation?: ViewStyle;
+  pageInterpolation?: iPageInterpolation;
   panProps?: Partial<GestureHandlerProperties>;
   pageSize?: number;
   threshold?: number;
@@ -246,12 +276,54 @@ function Pager({
   const prevIndex = memoize(max(sub(position, numberOfPagesDragged), minIndex));
   const shouldTransition = memoize(greaterThan(abs(percentDragged), threshold));
 
+  const runSpring = memoize((nextIndex: Animated.Node<number>) => {
+    const state = {
+      finished: new Value(0),
+      velocity: new Value(0),
+      position: new Value(0),
+      time: new Value(0),
+    };
+
+    const config = {
+      ...DEFAULT_SPRING_CONFIG,
+      ...springConfig,
+      toValue: new Value(0),
+    };
+
+    const page = multiply(dimension, pageSize);
+    const nextPosition = multiply(nextIndex, page, -1);
+
+    return block([
+      cond(
+        clockRunning(clock),
+        [
+          set(state.position, translationValue),
+          set(state.finished, 0),
+          cond(
+            neq(config.toValue, nextPosition),
+            set(config.toValue, nextPosition)
+          ),
+        ],
+        [
+          set(state.position, translationValue),
+          set(state.finished, 0),
+          set(state.time, 0),
+          set(state.velocity, 0),
+          set(config.toValue, nextPosition),
+          startClock(clock),
+        ]
+      ),
+      spring(clock, state, config),
+      cond(state.finished, [stopClock(clock), set(state.time, 0)]),
+      state.position,
+    ]);
+  });
+
   const translation = memoize(
     block([
       didChange(position, [
         call([position], ([nextIndex]) => onChange(nextIndex)),
       ]),
-
       cond(
         eq(gestureState, State.ACTIVE),
         [
@@ -278,48 +350,6 @@ function Pager({
     ])
   );
 
-  function runSpring(nextIndex: Animated.Node<number>) {
-    const state = {
-      finished: new Value(0),
-      velocity: new Value(0),
-      position: new Value(0),
-      time: new Value(0),
-    };
-
-    const config = {
-      ...DEFAULT_SPRING_CONFIG,
-      ...springConfig,
-      toValue: new Value(0),
-    };
-
-    const page = multiply(dimension, pageSize);
-
-    return block([
-      cond(
-        clockRunning(clock),
-        [
-          set(state.position, translationValue),
-          set(state.finished, 0),
-          cond(
-            neq(config.toValue, multiply(nextIndex, page, -1)),
-            set(config.toValue, multiply(nextIndex, page, -1))
-          ),
-        ],
-        [
-          set(state.position, translationValue),
-          set(state.finished, 0),
-          set(state.time, 0),
-          set(state.velocity, 0),
-          set(config.toValue, multiply(nextIndex, page, -1)),
-          startClock(clock),
-        ]
-      ),
-      spring(clock, state, config),
-      cond(state.finished, [stopClock(clock)]),
-      state.position,
-    ]);
-  }
-
   const adjacentChildren =
     adjacentChildOffset !== undefined
       ? children.slice(
@@ -331,6 +361,32 @@ function Pager({
   const totalDimension = useMemo(() => {
     return multiply(dimension, numberOfScreens);
   }, [dimension, numberOfScreens]);
+
+  const inverseTranslate = memoize(multiply(translation, -1));
+
+  const minimumOffset = useMemo(
+    () =>
+      sub(
+        inverseTranslate,
+        multiply(
+          dimension,
+          clamp.prev !== undefined ? clamp.prev : REALLY_BIG_NUMBER
+        )
+      ),
+    [dimension, clamp.prev]
+  );
+
+  const maximumOffset = useMemo(
+    () =>
+      add(
+        inverseTranslate,
+        multiply(
+          dimension,
+          clamp.next !== undefined ? clamp.next : REALLY_BIG_NUMBER
+        )
+      ),
+    [dimension, clamp.next]
+  );
 
   return (
     <Animated.View style={style || { flex: 1 }} onLayout={handleLayout}>
@@ -367,6 +423,8 @@ function Pager({
                   targetDimension={targetDimension}
                   translateValue={translateValue}
                   clamp={clamp}
+                  clampPrev={minimumOffset}
+                  clampNext={maximumOffset}
                   pageInterpolation={pageInterpolation}
                 >
                   {child}
@@ -390,8 +448,10 @@ interface iPage {
     prev?: number;
     next?: number;
   };
-  pageInterpolation: any;
+  pageInterpolation?: iPageInterpolation;
   children: React.ReactNode;
+  clampPrev: Animated.Node<number>;
+  clampNext: Animated.Node<number>;
 }
 
 function _Page({
@@ -400,51 +460,33 @@ function _Page({
   translation,
   targetDimension,
   translateValue,
-  clamp,
+  clampPrev,
+  clampNext,
   pageInterpolation,
   children,
 }: iPage) {
-  const inverseTranslate = memoize(multiply(translation, -1));
-
-  const minimum = memoize(
-    sub(
-      inverseTranslate,
-      multiply(
-        dimension,
-        clamp.prev !== undefined ? clamp.prev : REALLY_BIG_NUMBER
-      )
-    )
-  );
-
-  const maximum = memoize(
-    add(
-      inverseTranslate,
-      multiply(
-        dimension,
-        clamp.next !== undefined ? clamp.next : REALLY_BIG_NUMBER
-      )
-    )
-  );
-
   const position = memoize(multiply(index, dimension));
   const offset = memoize(divide(add(translation, position), max(dimension, 1)));
 
   const defaultStyle = {
     [targetDimension]: dimension,
-    transform: [{ [translateValue]: min(max(position, minimum), maximum) }],
+    transform: [{ [translateValue]: min(max(position, clampPrev), clampNext) }],
   };
 
-  const innerStyle = memoize(
-    mapConfigToStyle(offset, index, pageInterpolation)
-  );
-  const { zIndex, ...otherStyles } = innerStyle;
+  const innerStyle = memoize(mapConfigToStyle(offset, pageInterpolation));
+
+  let { zIndex, ...otherStyles } = innerStyle;
+
+  if (!zIndex) {
+    zIndex = -index;
+  }
 
   return (
     <Animated.View
       style={{
         ...StyleSheet.absoluteFillObject,
         ...defaultStyle,
-        zIndex: zIndex || (clamp.prev && clamp.prev > 0) ? index : index * -1,
+        zIndex: zIndex,
       }}
     >
       <Animated.View style={[{ flex: 1 }, otherStyles]}>
@@ -457,9 +499,8 @@ function _Page({
 const Page = memo(_Page);
 
 function mapConfigToStyle(
-  offset: any,
-  index: number,
-  pageInterpolation?: any
+  offset: Animated.Value<number>,
+  pageInterpolation?: iPageInterpolation
 ): ViewStyle {
   if (!pageInterpolation) {
     return {};
@@ -469,8 +510,8 @@ function mapConfigToStyle(
     const currentStyle = pageInterpolation[key];
 
     if (Array.isArray(currentStyle)) {
-      const _style = currentStyle.map((s: any) =>
-        mapConfigToStyle(offset, index, s)
+      const _style = currentStyle.map((interpolationConfig: any) =>
+        mapConfigToStyle(offset, interpolationConfig)
       );
 
       styles[key] = _style;
@@ -491,7 +532,7 @@ function mapConfigToStyle(
     }
 
     if (typeof currentStyle === 'function') {
-      const _style = currentStyle(offset, index);
+      const _style = currentStyle(offset);
       styles[key] = _style;
       return styles;
     }
