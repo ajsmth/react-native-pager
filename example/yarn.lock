@@ -657,10 +657,10 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@crowdlinker/react-native-pager@^0.1.4":
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/@crowdlinker/react-native-pager/-/react-native-pager-0.1.4.tgz#cd51348be2bbee05b4953095ba724c2935aacbb7"
-  integrity sha512-FNx3E9iXbSIa+uzfiCjBUgPUcwMy7o+Hx51HjFBlMuMu++mG83K04eFvGoVY3tF+Gcfxefy64a/X8rjVIGzVUQ==
+"@crowdlinker/react-native-pager@^0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@crowdlinker/react-native-pager/-/react-native-pager-0.1.5.tgz#44e40bb117a374a130a06731902494de90be6cd5"
+  integrity sha512-iw9vNXEGgwYScbqn9pJmFQS1p0GpwQd1KUZK9K9/MBoLq9x19ChRKuNxT/VRIPhwlD4HGFfBxh2Mv0ixejLjjQ==
 
 "@hapi/address@2.x.x":
   version "2.1.0"
