@@ -59,7 +59,19 @@ const App = () => {
 
   return (
     <SafeAreaView style={{flex: 1, justifyContent: 'center'}}>
-      <Stack>{children}</Stack>
+      <Pager
+        activeIndex={activeIndex}
+        onChange={onChange}
+        pageInterpolation={kilterCards}
+        clamp={{next: 0}}
+        style={{
+          width: 200,
+          height: 200,
+          alignSelf: 'center',
+          marginBottom: 25,
+        }}>
+        {children}
+      </Pager>
       <Buttons activeIndex={activeIndex} onChange={onChange} />
     </SafeAreaView>
   );

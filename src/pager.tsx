@@ -46,7 +46,7 @@ type iInterpolationFn = (
 ) => Animated.Value<number>;
 
 interface iInterpolationConfig extends InterpolationConfig {
-  unit?: 'deg' | 'rad';
+  unit?: string;
 }
 
 type iTransformProp = {
