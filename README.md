@@ -295,7 +295,7 @@ function Tabs({ children }) {
 
 The default settings for the pager component will be a full screen page that handles horizontal swipes.
 
-You can customize the behaviour of individual cards using the `pageInterpolation` prop. It accepts an object of interpolation configurations for the different properties you want to transform. The interpolation configs can be found in the `react-native-reanimated` docs.
+You can customize the behaviour of individual cards using the `pageInterpolation` prop. It accepts an object of interpolation configurations for the different properties you want to transform. The interpolation configs can be found in the [`react-native-reanimated` docs here](https://github.com/kmagiera/react-native-reanimated#interpolate).
 
 There's some pretty neat stuff you can do with these -- here are some examples for the configs above:
 
