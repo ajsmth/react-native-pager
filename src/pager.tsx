@@ -6,6 +6,7 @@ import React, {
   useContext,
   memo,
   useRef,
+  useEffect,
 } from 'react';
 import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -40,7 +41,7 @@ interface InterpolationConfig {
   extrapolateRight?: Extrapolate;
 }
 
-type InterpolationFn = (
+type iInterpolationFn = (
   offset: Animated.Value<number>
 ) => Animated.Value<number>;
 
@@ -48,12 +49,16 @@ interface iInterpolationConfig extends InterpolationConfig {
   unit?: 'deg' | 'rad';
 }
 
-type iPageInterpolation = {
-  [animatedProp: string]:
-    | iInterpolationConfig[]
-    | iInterpolationConfig
-    | InterpolationFn;
+type iTransformProp = {
+  [transformProp: string]: iInterpolationConfig | iInterpolationFn;
 };
+
+interface iPageInterpolation {
+  [animatedProp: string]:
+    | iTransformProp[]
+    | iInterpolationConfig
+    | iInterpolationFn;
+}
 
 const {
   event,
@@ -227,33 +232,23 @@ function Pager({
   const width = memoize(new Value(0));
   const height = memoize(new Value(0));
 
-  const targetDimension = useMemo(
-    () => (type === 'vertical' ? 'height' : 'width'),
-    [type]
-  );
-
-  const dimension = useMemo(() => (type === 'vertical' ? height : width), [
-    type,
-  ]);
-
-  const translateValue = useMemo(
-    () => (type === 'vertical' ? 'translateY' : 'translateX'),
-    [type]
-  );
-
-  const dragValue = useMemo(() => (type === 'vertical' ? dragY : dragX), [
-    type,
-  ]);
+  const targetDimension = type === 'vertical' ? 'height' : 'width';
+  const dimension = type === 'vertical' ? height : width;
+  const translateValue = type === 'vertical' ? 'translateY' : 'translateX';
+  const dragValue = type === 'vertical' ? dragY : dragX;
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
     width.setValue(layout.width as any);
     height.setValue(layout.height as any);
 
-    const initial = isControlled ? activeIndex : (initialIndex as any);
-    translationValue.setValue((initial * layout[targetDimension] * -1) as any);
+    translationValue.setValue((activeIndex *
+      layout[targetDimension] *
+      -1) as any);
   }
 
-  Animated.useCode(set(nextPosition, activeIndex), [activeIndex]);
+  useEffect(() => {
+    nextPosition.setValue(activeIndex);
+  }, [activeIndex]);
 
   const clampedDragPrev =
     clampDrag.prev !== undefined ? clampDrag.prev : -REALLY_BIG_NUMBER;

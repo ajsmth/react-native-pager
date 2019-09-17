@@ -48,7 +48,7 @@ function Slide({i}) {
 
 import {Stack, Tabs} from './tabs-stack';
 
-const children = Array.from({length: 3}, (c, i) => <Slide i={i} key={i} />);
+const children = Array.from({length: 1000}, (c, i) => <Slide i={i} key={i} />);
 
 const App = () => {
   const [activeIndex, setActiveIndex] = useState(2);
@@ -59,7 +59,16 @@ const App = () => {
 
   return (
     <SafeAreaView style={{flex: 1, justifyContent: 'center'}}>
-      <Tabs>{children}</Tabs>
+      <Pager
+        activeIndex={activeIndex}
+        onChange={onChange}
+        style={{width: 200, height: 200, alignSelf: 'center', marginBottom: 25}}
+        pageInterpolation={kilterCards}
+        clamp={{next: 0}}>
+        {children}
+      </Pager>
+
+      <Buttons activeIndex={activeIndex} onChange={onChange} />
     </SafeAreaView>
   );
 };
