@@ -86,6 +86,8 @@ const {
   ceil,
   interpolate,
   concat,
+  // @ts-ignore
+  debug,
 } = Animated;
 
 const DEFAULT_SPRING_CONFIG = {
@@ -146,7 +148,7 @@ function Pager({
     next: REALLY_BIG_NUMBER,
   },
   clampDrag = {
-    prev: -REALLY_BIG_NUMBER,
+    prev: REALLY_BIG_NUMBER,
     next: REALLY_BIG_NUMBER,
   },
 }: PagerProps) {
@@ -164,7 +166,7 @@ function Pager({
   clampDrag = useMemo(() => {
     if (!clampDrag) {
       return {
-        prev: -REALLY_BIG_NUMBER,
+        prev: REALLY_BIG_NUMBER,
         next: REALLY_BIG_NUMBER,
       };
     }
@@ -251,13 +253,13 @@ function Pager({
   }, [activeIndex]);
 
   const clampedDragPrev =
-    clampDrag.prev !== undefined ? clampDrag.prev : -REALLY_BIG_NUMBER;
+    clampDrag.prev !== undefined ? clampDrag.prev : REALLY_BIG_NUMBER;
 
   const clampedDragNext =
     clampDrag.next !== undefined ? clampDrag.next : REALLY_BIG_NUMBER;
 
   const clampedDragValue = memoize(
-    min(max(clampedDragPrev, dragValue), clampedDragNext)
+    max(min(clampedDragPrev, dragValue), multiply(clampedDragNext, -1))
   );
 
   const percentDragged = memoize(divide(clampedDragValue, dimension));

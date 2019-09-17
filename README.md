@@ -185,6 +185,10 @@ clamp?: {
   prev?: number; - percentage (0 - 1) - clamp children to the left of the active screen
   next?: number; - percentage (0 - 1) - clamp children to the right of the active screen
 };
+clampDrag: {
+  prev?: number - max drag distance to previous screen,
+  next?: number - max drag distance to next screen
+}
 ```
 
 ## Tabs and Stack
@@ -219,7 +223,7 @@ function Stack({ children }) {
         activeIndex={activeIndex}
         onChange={setActiveIndex}
         clamp={{ prev: 0.3 }}
-        clampDrag={{ prev: 0 }}
+        clampDrag={{ next: 0 }}
         style={{ flex: 1, overflow: 'hidden', paddingVertical: 5 }}
       >
         {children}

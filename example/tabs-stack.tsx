@@ -36,7 +36,7 @@ function Stack({children}) {
         activeIndex={activeIndex}
         onChange={setActiveIndex}
         clamp={{prev: 0.3}}
-        clampDrag={{prev: 0}}
+        clampDrag={{next: 0}}
         style={{flex: 1, overflow: 'hidden', paddingVertical: 5}}>
         {children}
       </Pager>
