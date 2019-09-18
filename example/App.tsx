@@ -7,14 +7,24 @@
  */
 
 import React, {useState} from 'react';
-import {SafeAreaView, StyleSheet, View, Text} from 'react-native';
+import {
+  SafeAreaView,
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+} from 'react-native';
 
 import Animated from 'react-native-reanimated';
-import {TouchableOpacity} from 'react-native-gesture-handler';
 
 console.disableYellowBox = true;
 
-import {Pager, PagerProvider, usePager} from '@crowdlinker/react-native-pager';
+import {
+  Pager,
+  PagerProvider,
+  usePager,
+  Pagination,
+} from '@crowdlinker/react-native-pager';
 import {ReText} from 'react-native-redash';
 
 const colors = [
@@ -28,7 +38,7 @@ const colors = [
   'salmon',
 ];
 
-const {Extrapolate, floor, divide} = Animated;
+const {Extrapolate, floor, divide, Value, multiply} = Animated;
 
 function Slide({i}) {
   return (
@@ -46,9 +56,9 @@ function Slide({i}) {
   );
 }
 
-import {Stack, Tabs} from './tabs-stack';
+import {Tabs} from './tabs-stack';
 
-const children = Array.from({length: 1000}, (c, i) => <Slide i={i} key={i} />);
+const children = Array.from({length: 7}, (c, i) => <Slide i={i} key={i} />);
 
 const App = () => {
   const [activeIndex, setActiveIndex] = useState(2);
@@ -58,28 +68,26 @@ const App = () => {
   }
 
   return (
-    <SafeAreaView style={{flex: 1, justifyContent: 'center'}}>
-      <Pager
-        activeIndex={activeIndex}
-        onChange={onChange}
-        pageInterpolation={kilterCards}
-        clamp={{next: 0}}
-        style={{
-          width: 200,
-          height: 200,
-          alignSelf: 'center',
-          marginBottom: 25,
-        }}>
-        {children}
-      </Pager>
-      <Buttons activeIndex={activeIndex} onChange={onChange} />
-    </SafeAreaView>
+    <View style={{flex: 1, backgroundColor: 'white'}}>
+      <SafeAreaView style={{flex: 1, justifyContent: 'center'}}>
+        <Tabs activeIndex={activeIndex} onChange={onChange}>
+          {children}
+        </Tabs>
+        <Buttons activeIndex={activeIndex} onChange={onChange} />
+      </SafeAreaView>
+    </View>
   );
 };
 
 function Buttons({activeIndex, onChange}) {
   return (
-    <View style={{height: 75, width: '100%'}}>
+    <View
+      style={{
+        height: 75,
+        width: '100%',
+        backgroundColor: 'white',
+        paddingTop: 10,
+      }}>
       <Text
         style={{
           fontSize: 16,

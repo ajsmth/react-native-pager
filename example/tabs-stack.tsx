@@ -1,6 +1,9 @@
 import React, {useState} from 'react';
 import {StyleSheet, TouchableOpacity, View, Text} from 'react-native';
-import {Pager} from '@crowdlinker/react-native-pager';
+import {Pager, Pagination, Slider} from '@crowdlinker/react-native-pager';
+import Animated from 'react-native-reanimated';
+
+const {Value, multiply} = Animated;
 
 const colors = [
   'aquamarine',
@@ -60,34 +63,102 @@ function Stack({children}) {
   );
 }
 
-function Tabs({children}) {
-  const [activeIndex, setActiveIndex] = useState(0);
+const animatedIndex = new Value(0);
+
+function Circle({i, onPress}) {
+  return (
+    <TouchableOpacity
+      onPress={() => onPress(i)}
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}>
+      <View
+        style={{
+          backgroundColor: colors[i % colors.length],
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+        }}
+      />
+    </TouchableOpacity>
+  );
+}
+
+const circleInterpolation = {
+  transform: [
+    {
+      scale: {
+        inputRange: [-2, -1, 0, 1, 2],
+        outputRange: [0.5, 0.5, 0.8, 0.5, 0.5],
+      },
+    },
+  ],
+};
+
+function Tabs({
+  children,
+  activeIndex: parentActiveIndex,
+  onChange: parentOnChange,
+  ...rest
+}) {
+  const [_activeIndex, _onChange] = useState(0);
+
+  const activeIndex =
+    parentActiveIndex !== undefined ? parentActiveIndex : _activeIndex;
+  const onChange = parentActiveIndex !== undefined ? parentOnChange : _onChange;
 
   return (
-    <View style={{flex: 1, borderWidth: StyleSheet.hairlineWidth}}>
+    <View style={{height: 400, width: '100%', alignSelf: 'center'}}>
       <Pager
+        style={{flex: 1, paddingBottom: 50, overflow: 'hidden'}}
+        animatedIndex={animatedIndex}
         activeIndex={activeIndex}
-        onChange={setActiveIndex}
-        style={{flex: 1, overflow: 'hidden', paddingVertical: 5}}>
+        onChange={onChange}
+        {...rest}>
         {children}
       </Pager>
 
-      <View style={{height: 50, flexDirection: 'row'}}>
+      <Pagination
+        pageInterpolation={circleInterpolation}
+        animatedIndex={animatedIndex}
+        style={{
+          height: 20,
+          width: '50%',
+          alignSelf: 'center',
+          transform: [{translateY: -25}],
+        }}>
         {React.Children.map(children, (c, i) => (
-          <TouchableOpacity
-            onPress={() => setActiveIndex(i)}
-            style={{
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderWidth: 1,
-              borderColor: activeIndex === i ? colors[i] : 'black',
-            }}>
-            <Text style={{color: activeIndex === i ? colors[i] : 'black'}}>
-              {i + 1}
-            </Text>
-          </TouchableOpacity>
+          <Circle i={i} onPress={onChange} />
         ))}
+      </Pagination>
+
+      <View style={{backgroundColor: 'white'}}>
+        <View style={{height: 50, flexDirection: 'row'}}>
+          {React.Children.map(children, (c, i) => (
+            <TouchableOpacity
+              onPress={() => onChange(i)}
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+              <Text style={{color: activeIndex === i ? colors[i] : 'black'}}>
+                {i}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Slider
+          numberOfScreens={children.length}
+          animatedIndex={animatedIndex}
+          style={{
+            backgroundColor: colors[activeIndex % colors.length],
+            height: 3,
+          }}
+        />
       </View>
     </View>
   );

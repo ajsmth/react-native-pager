@@ -5,7 +5,6 @@ import React, {
   createContext,
   useContext,
   memo,
-  useRef,
   useEffect,
 } from 'react';
 import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
@@ -15,6 +14,7 @@ import {
   State,
   GestureHandlerProperties,
 } from 'react-native-gesture-handler';
+import { memoize, mapConfigToStyle } from './util';
 
 type SpringConfig = {
   damping: Animated.Adaptable<number>;
@@ -53,7 +53,7 @@ type iTransformProp = {
   [transformProp: string]: iInterpolationConfig | iInterpolationFn;
 };
 
-interface iPageInterpolation {
+export interface iPageInterpolation {
   [animatedProp: string]:
     | iTransformProp[]
     | iInterpolationConfig
@@ -114,6 +114,7 @@ export interface PagerProps {
   adjacentChildOffset?: number;
   style?: ViewStyle;
   animatedValue?: Animated.Value<number>;
+  animatedIndex?: Animated.Value<number>;
   type?: 'horizontal' | 'vertical';
   clamp?: {
     prev?: number;
@@ -151,6 +152,7 @@ function Pager({
     prev: REALLY_BIG_NUMBER,
     next: REALLY_BIG_NUMBER,
   },
+  animatedIndex: parentAnimatedIndex,
 }: PagerProps) {
   clamp = useMemo(() => {
     if (!clamp) {
@@ -315,9 +317,12 @@ function Pager({
       ),
       spring(clock, state, config),
       cond(state.finished, [stopClock(clock), set(state.time, 0)]),
+      set(animatedIndex, divide(state.position, max(dimension, 1), -1)),
       state.position,
     ]);
   });
+
+  const animatedIndex = memoize(parentAnimatedIndex || new Value(0));
 
   const translation = memoize(
     block([
@@ -334,6 +339,10 @@ function Pager({
               [cond(lessThan(percentDragged, 0), nextIndex, prevIndex)],
               position
             )
+          ),
+          set(
+            animatedIndex,
+            divide(add(clampedDragValue, dragStart), max(dimension, 1), -1)
           ),
           set(translationValue, add(clampedDragValue, dragStart)),
         ],
@@ -498,54 +507,6 @@ function _Page({
 }
 
 const Page = memo(_Page);
-
-function mapConfigToStyle(
-  offset: Animated.Value<number>,
-  pageInterpolation?: iPageInterpolation
-): ViewStyle {
-  if (!pageInterpolation) {
-    return {};
-  }
-
-  return Object.keys(pageInterpolation).reduce((styles: any, key: any) => {
-    const currentStyle = pageInterpolation[key];
-
-    if (Array.isArray(currentStyle)) {
-      const _style = currentStyle.map((interpolationConfig: any) =>
-        mapConfigToStyle(offset, interpolationConfig)
-      );
-
-      styles[key] = _style;
-      return styles;
-    }
-
-    if (typeof currentStyle === 'object') {
-      let _style;
-      const { unit, ...rest } = currentStyle;
-      if (currentStyle.unit) {
-        _style = concat(interpolate(offset, rest), currentStyle.unit);
-      } else {
-        _style = interpolate(offset, currentStyle);
-      }
-
-      styles[key] = _style;
-      return styles;
-    }
-
-    if (typeof currentStyle === 'function') {
-      const _style = currentStyle(offset);
-      styles[key] = _style;
-      return styles;
-    }
-
-    return styles;
-  }, {});
-}
-
-function memoize(value: any): any {
-  const ref = useRef(value);
-  return ref.current;
-}
 
 type iPagerContext = [number, (nextIndex: number) => void];
 const PagerContext = createContext<undefined | iPagerContext>(undefined);
