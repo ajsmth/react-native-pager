@@ -181,6 +181,7 @@ maxIndex?: number; - maximum index to swipe to (default children.length - 1)
 adjacentChildOffset?: number; - the number of children adjacent to the activeIndex to render
 style?: ViewStyle; - container style for the pager
 animatedValue?: Animated.Value<number>; - total translation value of the pager
+animatedIndex?: Animated.Value<number>; - activeIndex as an animated value e.g intermediate values
 type?: 'horizontal' | 'vertical'; - target horizontal swipes or vertical swipes
 clamp?: {
   prev?: number; - percentage (0 - 1) - clamp children to the left of the active screen
@@ -434,7 +435,7 @@ const swipeCards = {
   <img src="docs/assets/paginated-tabs.gif" />
 </p>
 
-There's a few components to display the current active tab. These require an `animatedIndex` prop that you can pass into the active pager component and share with these components:
+There's a few components to display the current active active. These require an `animatedIndex` prop that you can pass into the active pager component and share with these components:
 
 ```javascript
 
