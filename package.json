@@ -12,7 +12,7 @@
     "type": "git",
     "url": "git+https://github.com/CrowdLinker/react-native-pager.git"
   },
-  "license": "ISC",
+  "license": "MIT",
   "scripts": {
     "start": "tsdx watch",
     "build": "tsdx build",
