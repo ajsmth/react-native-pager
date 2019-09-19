@@ -1,6 +1,17 @@
 import React, {useState} from 'react';
-import {StyleSheet, TouchableOpacity, View, Text} from 'react-native';
-import {Pager, Pagination, Slider} from '@crowdlinker/react-native-pager';
+import {
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  Text,
+  ViewStyle,
+} from 'react-native';
+import {
+  Pager,
+  Pagination,
+  Slider,
+  Progress,
+} from '@crowdlinker/react-native-pager';
 import Animated from 'react-native-reanimated';
 
 const {Value, multiply} = Animated;
@@ -63,7 +74,36 @@ function Stack({children}) {
   );
 }
 
-const animatedIndex = new Value(0);
+const circleInterpolation = {
+  transform: [
+    {
+      scale: {
+        inputRange: [-2, -1, 0, 1, 2],
+        outputRange: [0.5, 0.5, 0.8, 0.5, 0.5],
+      },
+    },
+  ],
+};
+
+function Circles({children, onChange}) {
+  return (
+    <Pagination
+      pageInterpolation={circleInterpolation}
+      animatedIndex={animatedIndex}
+      style={circlesContainer}>
+      {React.Children.map(children, (_, i) => (
+        <Circle i={i} onPress={onChange} />
+      ))}
+    </Pagination>
+  );
+}
+
+const circlesContainer: ViewStyle = {
+  height: 20,
+  width: '70%',
+  alignSelf: 'center',
+  transform: [{translateY: -30}],
+};
 
 function Circle({i, onPress}) {
   return (
@@ -86,80 +126,67 @@ function Circle({i, onPress}) {
   );
 }
 
-const circleInterpolation = {
-  transform: [
-    {
-      scale: {
-        inputRange: [-2, -1, 0, 1, 2],
-        outputRange: [0.5, 0.5, 0.8, 0.5, 0.5],
-      },
-    },
-  ],
-};
+function Tabbar({children, onChange, activeIndex}) {
+  return (
+    <View style={{height: 40, flexDirection: 'row'}}>
+      {React.Children.map(children, (c, i) => (
+        <TouchableOpacity
+          onPress={() => onChange(i)}
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <Text style={{color: activeIndex === i ? colors[i] : 'black'}}>
+            {i}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
 
-function Tabs({
-  children,
-  activeIndex: parentActiveIndex,
-  onChange: parentOnChange,
-  ...rest
-}) {
-  const [_activeIndex, _onChange] = useState(0);
+const animatedIndex = new Value(0);
 
-  const activeIndex =
-    parentActiveIndex !== undefined ? parentActiveIndex : _activeIndex;
-  const onChange = parentActiveIndex !== undefined ? parentOnChange : _onChange;
+function Tabs({children}) {
+  const [activeIndex, onChange] = useState(0);
+  const activeColor = colors[activeIndex % colors.length];
 
   return (
-    <View style={{height: 400, width: '100%', alignSelf: 'center'}}>
+    <View style={{height: 400, width: 300, alignSelf: 'center'}}>
       <Pager
-        style={{flex: 1, paddingBottom: 50, overflow: 'hidden'}}
+        style={{flex: 1, overflow: 'hidden'}}
         animatedIndex={animatedIndex}
         activeIndex={activeIndex}
-        onChange={onChange}
-        {...rest}>
+        onChange={onChange}>
         {children}
       </Pager>
 
-      <Pagination
-        pageInterpolation={circleInterpolation}
+      <View style={{marginVertical: 30}} />
+
+      <Circles onChange={onChange}>{children}</Circles>
+
+      <View style={{marginVertical: 10}} />
+
+      <Progress
+        numberOfScreens={children.length}
         animatedIndex={animatedIndex}
         style={{
-          height: 20,
-          width: '50%',
-          alignSelf: 'center',
-          transform: [{translateY: -25}],
-        }}>
-        {React.Children.map(children, (c, i) => (
-          <Circle i={i} onPress={onChange} />
-        ))}
-      </Pagination>
+          backgroundColor: activeColor,
+        }}
+      />
 
-      <View style={{backgroundColor: 'white'}}>
-        <View style={{height: 50, flexDirection: 'row'}}>
-          {React.Children.map(children, (c, i) => (
-            <TouchableOpacity
-              onPress={() => onChange(i)}
-              style={{
-                flex: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-              <Text style={{color: activeIndex === i ? colors[i] : 'black'}}>
-                {i}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      <Tabbar activeIndex={activeIndex} onChange={onChange}>
+        {children}
+      </Tabbar>
 
-        <Slider
-          numberOfScreens={children.length}
-          animatedIndex={animatedIndex}
-          style={{
-            backgroundColor: colors[activeIndex % colors.length],
-            height: 3,
-          }}
-        />
-      </View>
+      <Slider
+        numberOfScreens={children.length}
+        animatedIndex={animatedIndex}
+        style={{
+          backgroundColor: activeColor,
+        }}
+      />
     </View>
   );
 }

@@ -4,11 +4,11 @@ import { ViewStyle, LayoutChangeEvent } from 'react-native';
 import { iPageInterpolation } from './pager';
 import { memoize, mapConfigToStyle } from './util';
 
-const { sub, Value, divide, multiply } = Animated;
+const { sub, Value, divide, multiply, add } = Animated;
 
 interface iPagination {
   children: React.ReactNode;
-  animatedIndex: Animated.Node<number>;
+  animatedIndex: Animated.Value<number>;
   pageInterpolation: iPageInterpolation;
   style?: ViewStyle;
 }
@@ -48,7 +48,7 @@ function Pagination({
 
 interface iPaginationItem {
   children: React.ReactNode;
-  animatedIndex: Animated.Node<number>;
+  animatedIndex: Animated.Value<number>;
   pageInterpolation: iPageInterpolation;
   index: number;
   style?: ViewStyle;
@@ -73,9 +73,14 @@ function PaginationItem({
 
 interface iSlider {
   numberOfScreens: number;
-  animatedIndex: Animated.Node<number>;
+  animatedIndex: Animated.Value<number>;
   style: ViewStyle;
 }
+
+const DEFAULT_SLIDER_STYLE = {
+  height: 2,
+  backgroundColor: 'aquamarine',
+};
 
 function Slider({ numberOfScreens, animatedIndex, style }: iSlider) {
   const width = memoize(new Value(0));
@@ -93,6 +98,7 @@ function Slider({ numberOfScreens, animatedIndex, style }: iSlider) {
         style={{
           width: sliderWidth,
           transform: [{ translateX: translation }],
+          ...DEFAULT_SLIDER_STYLE,
           ...style,
         }}
       />
@@ -100,4 +106,32 @@ function Slider({ numberOfScreens, animatedIndex, style }: iSlider) {
   );
 }
 
-export { Pagination, Slider };
+function Progress({ numberOfScreens, animatedIndex, style }: iSlider) {
+  const width = memoize(new Value(0));
+
+  function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
+    width.setValue(layout.width as any);
+  }
+
+  const sliderWidth = divide(
+    width,
+    numberOfScreens,
+    divide(1, add(animatedIndex, 1))
+  );
+
+  return (
+    <Animated.View onLayout={handleLayout}>
+      <Animated.View
+        style={{
+          width: sliderWidth,
+          height: 2,
+          backgroundColor: 'rebeccapurple',
+          ...DEFAULT_SLIDER_STYLE,
+          ...style,
+        }}
+      />
+    </Animated.View>
+  );
+}
+
+export { Pagination, Slider, Progress };

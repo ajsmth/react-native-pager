@@ -2,8 +2,9 @@
 
 Fully controllable, high performance pager component w/ gesture support for React Native
 
-<p align="center">
-  <img src="docs/assets/inline-cards.gif" />
+<p align="center" style="display: flex; justify-content: center; align-items:center;">
+  <img src="docs/assets/inline-cards.gif" width="300px"  style="margin: 0 10px"/>
+  <img src="docs/assets/paginated-tabs.gif" width="300px" style="margin: 0 10px"/> 
 </p>
 
 # Installation
@@ -26,14 +27,14 @@ There are additional steps to setting these up:
 
 _These examples were inspired by the docs of the awesome [react-native-snap-carousel library](https://github.com/archriss/react-native-snap-carousel)_
 
-<p align="center">
-  <img src="docs/assets/kilter-cards.gif" />
-  <img src="docs/assets/swipe-cards.gif" />
+<p align="center" style="display: flex; justify-content: center; align-items:center; flex-wrap: wrap;">
+  <img src="docs/assets/kilter-cards.gif" width="300px" style="margin: 0 10px" />
+  <img src="docs/assets/swipe-cards.gif" width="300px" style="margin: 0 10px" />
 </p>
 
-<p align="center">
-  <img src="docs/assets/stacked-cards.gif" />
-  <img src="docs/assets/inline-cards.gif" />
+<p align="center" style="display: flex; justify-content: center; align-items:center; flex-wrap: wrap;">
+  <img src="docs/assets/stacked-cards.gif" width="300px" style="margin: 0 10px" />
+  <img src="docs/assets/inline-cards.gif" width="300px" style="margin: 0 10px" />
 </p>
 
 ### Basic Pager
@@ -162,7 +163,7 @@ function Buttons({ activeIndex, onChange }) {
 ## Pager
 
 ```typescript
-import { Pager } from 'react-native-pager-component'
+import { Pager } from '@crowdlinker/react-native-pager'
 
 Props
 --------
@@ -189,6 +190,43 @@ clampDrag: {
   prev?: number - max drag distance to previous screen,
   next?: number - max drag distance to next screen
 }
+```
+
+## Pagination
+
+```typescript
+import { Pagination } from '@crowdlinker/react-native-pager'
+
+Props
+--------
+children: React.ReactNode;
+animatedIndex: Animated.Value<number>;
+pageInterpolation: iPageInterpolation;
+style?: ViewStyle;
+```
+
+## Slider
+
+```typescript
+import { Slider } from '@crowdlinker/react-native-pager'
+
+Props
+--------
+numberOfScreens: number;
+animatedIndex: Animated.Value<number>;
+style: ViewStyle;
+```
+
+## Progress
+
+```typescript
+import { Progress } from '@crowdlinker/react-native-pager'
+
+Props
+--------
+numberOfScreens: number;
+animatedIndex: Animated.Value<number>;
+style: ViewStyle;
 ```
 
 ## Tabs and Stack
@@ -367,6 +405,7 @@ const swipeCards = {
       // you can pass a function as a transformer -- offset in this case will represent
       // the distance a screen is from the active screen
       // e.g -1 means 1 to the left, 4 means 4 to the right
+      // this will move cards downwards as they get further away from the activeIndex
       translateY: (offset: Animated.Value<number>) =>
         Animated.multiply(offset, 10),
     },
@@ -380,11 +419,83 @@ const swipeCards = {
     },
   ],
 
-  // any Animated[fn] can be used in these functions
+  // any Animated function can be used in these
   zIndex: offset => floor(divide(offset, -1)),
 };
 
 <Pager clamp={{ next: 0 }} pageInterpolation={swipeCards}>
   ...
 </Pager>;
+```
+
+## Pagination
+
+<p align="center">
+  <img src="docs/assets/paginated-tabs.gif" />
+</p>
+
+There's a few components to display the current active tab. These require an `animatedIndex` prop that you can pass into the active pager component and share with these components:
+
+```javascript
+
+const animatedIndex = new Value(0)
+
+function MyPager({ children }) {
+  <View>
+    <Pager animatedIndex={animatedIndex} {...}>
+      {children}
+    </Pager>
+
+    // e.g: render this somewhere
+    <Progress animatedIndex={animatedIndex} numberOfScreens={children.length}>
+  </View>
+}
+```
+
+There are three right now: `<Pagination />`, `<Slider />` and `<Progress />`. The API for these might change as it would be nice to have less opinionated and configurable components here.
+
+```javascript
+// e.g emphasize active circle
+const circleInterpolation = {
+  transform: [
+    {
+      scale: {
+        inputRange: [-2, -1, 0, 1, 2],
+        outputRange: [0.5, 0.5, 0.8, 0.5, 0.5],
+      },
+    },
+  ],
+};
+
+// e.g - position circles vertically
+<Pagination
+  animatedIndex={animatedIndex}
+  style={{ height: 200, width: 40, flexDirection: 'column' }}
+  pageInterpolation={circleInterpolation}
+>
+  <Circle />
+  <Circle />
+  <Circle />
+</Pagination>;
+```
+
+```javascript
+<Slider
+  numberOfScreens={children.length}
+  animatedIndex={animatedIndex}
+  style={{
+    backgroundColor: activeColor,
+  }}
+/>
+```
+
+```javascript
+<Progress
+  numberOfScreens={3}
+  animatedIndex={animatedIndex}
+  style={{
+    backgroundColor: activeColor,
+    height: 4,
+  }}
+/>
 ```

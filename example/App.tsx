@@ -70,10 +70,7 @@ const App = () => {
   return (
     <View style={{flex: 1, backgroundColor: 'white'}}>
       <SafeAreaView style={{flex: 1, justifyContent: 'center'}}>
-        <Tabs activeIndex={activeIndex} onChange={onChange}>
-          {children}
-        </Tabs>
-        <Buttons activeIndex={activeIndex} onChange={onChange} />
+        <Tabs>{children}</Tabs>
       </SafeAreaView>
     </View>
   );

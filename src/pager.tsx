@@ -84,8 +84,6 @@ const {
   abs,
   lessThan,
   ceil,
-  interpolate,
-  concat,
   // @ts-ignore
   debug,
 } = Animated;
