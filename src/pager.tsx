@@ -4,7 +4,6 @@ import React, {
   useMemo,
   createContext,
   useContext,
-  memo,
   useEffect,
 } from 'react';
 import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
@@ -43,7 +42,7 @@ interface InterpolationConfig {
 
 type iInterpolationFn = (
   offset: Animated.Value<number>
-) => Animated.Value<number>;
+) => Animated.Node<number>;
 
 interface iInterpolationConfig extends InterpolationConfig {
   unit?: string;
@@ -137,7 +136,7 @@ function Pager({
   threshold = 0.1,
   minIndex = 0,
   maxIndex: parentMax,
-  adjacentChildOffset = 5,
+  adjacentChildOffset = 10,
   style,
   animatedValue,
   type = 'horizontal',
@@ -197,10 +196,18 @@ function Pager({
 
   const numberOfScreens = Children.count(children);
 
-  const maxIndex =
+  // maxIndex might change over time, but computations using this value are memoized
+  // so it should be saved and updated as an Animated.Value accordingly
+  const maxIndexValue =
     parentMax === undefined
       ? Math.ceil((numberOfScreens - 1) / pageSize)
       : parentMax;
+
+  const maxIndex = memoize(new Value(maxIndexValue));
+
+  useEffect(() => {
+    maxIndex.setValue(maxIndexValue);
+  }, [numberOfScreens, pageSize, parentMax]);
 
   const handleGesture = memoize(
     event(
@@ -360,6 +367,10 @@ function Pager({
     ])
   );
 
+  if (numberOfScreens === 1) {
+    children = [children];
+  }
+
   const adjacentChildren =
     adjacentChildOffset !== undefined
       ? children.slice(
@@ -413,7 +424,12 @@ function Pager({
               transform: [{ [translateValue]: translation }],
             }}
           >
-            {Children.map(adjacentChildren, (child: any, i) => {
+            {adjacentChildren.map((child: any, i) => {
+              // use map instead of React.Children because we want to track
+              // the keys of these children by there index
+              // React.Children shifts these key values intelligently, but it
+              // causes issues with the memoized values in <Page /> components
+
               let index = i;
 
               if (adjacentChildOffset !== undefined) {
@@ -425,6 +441,7 @@ function Pager({
 
               return (
                 <Page
+                  key={index}
                   index={index}
                   dimension={dimension}
                   translation={translation}
@@ -462,7 +479,7 @@ interface iPage {
   clampNext: Animated.Node<number>;
 }
 
-function _Page({
+function Page({
   index,
   dimension,
   translation,
@@ -503,8 +520,6 @@ function _Page({
     </Animated.View>
   );
 }
-
-const Page = memo(_Page);
 
 type iPagerContext = [number, (nextIndex: number) => void];
 const PagerContext = createContext<undefined | iPagerContext>(undefined);
