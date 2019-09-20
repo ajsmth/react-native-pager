@@ -1,14 +1,14 @@
 import React, { Children } from 'react';
 import Animated from 'react-native-reanimated';
 import { ViewStyle, LayoutChangeEvent } from 'react-native';
-import { iPageInterpolation } from './pager';
+import { iPageInterpolation, usePager } from './pager';
 import { memoize, mapConfigToStyle } from './util';
 
 const { sub, Value, divide, multiply, add } = Animated;
 
 interface iPagination {
   children: React.ReactNode;
-  animatedIndex: Animated.Value<number>;
+  animatedIndex?: Animated.Value<number>;
   pageInterpolation: iPageInterpolation;
   style?: ViewStyle;
 }
@@ -21,10 +21,18 @@ const DEFAULT_PAGINATION_STYLE: ViewStyle = {
 
 function Pagination({
   children,
-  animatedIndex,
+  animatedIndex: parentAnimatedIndex,
   pageInterpolation,
   style,
 }: iPagination) {
+  const context = usePager();
+  const animatedIndex =
+    parentAnimatedIndex !== undefined
+      ? parentAnimatedIndex
+      : context !== undefined
+      ? context[3]
+      : new Value(0);
+
   return (
     <Animated.View
       style={{
@@ -73,7 +81,7 @@ function PaginationItem({
 
 interface iSlider {
   numberOfScreens: number;
-  animatedIndex: Animated.Value<number>;
+  animatedIndex?: Animated.Value<number>;
   style: ViewStyle;
 }
 
@@ -82,7 +90,20 @@ const DEFAULT_SLIDER_STYLE = {
   backgroundColor: 'aquamarine',
 };
 
-function Slider({ numberOfScreens, animatedIndex, style }: iSlider) {
+function Slider({
+  numberOfScreens,
+  animatedIndex: parentAnimatedIndex,
+  style,
+}: iSlider) {
+  const context = usePager();
+
+  const animatedIndex =
+    parentAnimatedIndex !== undefined
+      ? parentAnimatedIndex
+      : context !== undefined
+      ? context[3]
+      : new Value(0);
+
   const width = memoize(new Value(0));
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
@@ -106,7 +127,20 @@ function Slider({ numberOfScreens, animatedIndex, style }: iSlider) {
   );
 }
 
-function Progress({ numberOfScreens, animatedIndex, style }: iSlider) {
+function Progress({
+  numberOfScreens,
+  animatedIndex: parentAnimatedIndex,
+  style,
+}: iSlider) {
+  const context = usePager();
+
+  const animatedIndex =
+    parentAnimatedIndex !== undefined
+      ? parentAnimatedIndex
+      : context !== undefined
+      ? context[3]
+      : new Value(0);
+
   const width = memoize(new Value(0));
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {

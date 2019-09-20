@@ -1,5 +1,9 @@
-import React, {useState} from 'react';
-import {Pager, iPageInterpolation} from '@crowdlinker/react-native-pager';
+import React from 'react';
+import {
+  Pager,
+  iPageInterpolation,
+  usePager,
+} from '@crowdlinker/react-native-pager';
 import {Slide, NavigationButtons} from './shared-components';
 import {View} from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -40,13 +44,12 @@ const swipeCardsConfig: iPageInterpolation = {
 };
 
 function SwipeCards() {
-  const [activeIndex, onChange] = useState(2);
+  // using <PagerProvider /> parent which registers correct props to <Pager />
+  const [activeIndex, onChange] = usePager();
 
   return (
     <View>
       <Pager
-        activeIndex={activeIndex}
-        onChange={onChange}
         clamp={{next: 0}}
         style={{height: 200, width: 200, alignSelf: 'center', padding: 10}}
         pageInterpolation={swipeCardsConfig}>

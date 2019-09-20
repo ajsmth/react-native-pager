@@ -151,18 +151,49 @@ function Pager({
   },
   animatedIndex: parentAnimatedIndex,
 }: PagerProps) {
+  const context = useContext(PagerContext);
+
   // register these props if they exist -- they can be shared with other
   // components to keep the translation values in sync
-  const translationValue = memoize(animatedValue || new Value(0));
-  const animatedIndex = memoize(parentAnimatedIndex || new Value(0));
+
+  // prioritize direct prop, then context, then internal value
+  // memoize these so they don't get reset on rerenders
+  const _animatedValue =
+    animatedValue !== undefined
+      ? animatedValue
+      : context
+      ? context[2]
+      : new Value(0);
+
+  const translationValue = memoize(_animatedValue);
+
+  const _animatedIndex =
+    parentAnimatedIndex !== undefined
+      ? parentAnimatedIndex
+      : context
+      ? context[3]
+      : new Value(0);
+  const animatedIndex = memoize(_animatedIndex);
 
   const [_activeIndex, _onChange] = useState(initialIndex);
 
   // assign activeIndex and onChange correctly based on controlled / uncontrolled
   // configurations
+
+  // prioritize direct prop over context, and context over internal state
   const isControlled = parentActiveIndex !== undefined;
-  const activeIndex = isControlled ? parentActiveIndex : (_activeIndex as any);
-  const onChange = isControlled ? parentOnChange : (_onChange as any);
+
+  const activeIndex = isControlled
+    ? parentActiveIndex
+    : context
+    ? context[0]
+    : (_activeIndex as any);
+
+  const onChange = isControlled
+    ? parentOnChange
+    : context
+    ? context[1]
+    : (_onChange as any);
 
   const numberOfScreens = Children.count(children);
 
@@ -609,23 +640,42 @@ function Page({
   );
 }
 
-type iPagerContext = [number, (nextIndex: number) => void];
+type iPagerContext = [
+  number,
+  (nextIndex: number) => void,
+  Animated.Value<number>,
+  Animated.Value<number>
+];
+
 const PagerContext = createContext<undefined | iPagerContext>(undefined);
 
 interface iPagerProvider {
   children: React.ReactNode;
   initialIndex?: number;
+  activeIndex?: number;
+  onChange?: (nextIndex: number) => void;
 }
 
-function PagerProvider({ children, initialIndex = 0 }: iPagerProvider) {
-  const [activeIndex, setActiveIndex] = useState(initialIndex);
+function PagerProvider({
+  children,
+  initialIndex = 0,
+  activeIndex: parentActiveIndex,
+  onChange: parentOnChange,
+}: iPagerProvider) {
+  const [_activeIndex, _setActiveIndex] = useState(initialIndex);
 
-  function onChange(nextIndex: number) {
-    setActiveIndex(nextIndex);
-  }
+  const isControlled = parentActiveIndex !== undefined;
+
+  const activeIndex = isControlled ? parentActiveIndex : _activeIndex;
+  const onChange = isControlled ? parentOnChange : _setActiveIndex;
+
+  const animatedValue = memoize(new Value(0));
+  const animatedIndex = memoize(new Value(0));
 
   return (
-    <PagerContext.Provider value={[activeIndex, onChange]}>
+    <PagerContext.Provider
+      value={[activeIndex, onChange, animatedValue, animatedIndex]}
+    >
       {typeof children === 'function'
         ? children({ activeIndex, onChange })
         : children}
@@ -637,7 +687,7 @@ function usePager(): iPagerContext {
   const context = useContext(PagerContext);
 
   if (context === undefined) {
-    throw new Error('usePager must be used within a <PagerProvider />');
+    throw new Error(`usePager() must be used within a <PagerProvider />`);
   }
 
   return context;

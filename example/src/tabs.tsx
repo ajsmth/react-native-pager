@@ -1,15 +1,14 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   Pager,
   iPageInterpolation,
   Pagination,
   Slider,
+  usePager,
+  Progress,
 } from '@crowdlinker/react-native-pager';
 import {Slide, colors} from './shared-components';
 import {View, Text, TouchableOpacity, ViewStyle} from 'react-native';
-import Animated from 'react-native-reanimated';
-
-const {Value} = Animated;
 
 const tabsConfig: iPageInterpolation = {
   transform: [
@@ -24,13 +23,10 @@ const tabsConfig: iPageInterpolation = {
   zIndex: offset => offset,
 };
 
-const animatedIndex = new Value(2);
-
 const children = Array.from({length: 7}, (_, i) => <Slide key={i} i={i} />);
 
 function Tabs() {
-  const [activeIndex, onChange] = useState(2);
-
+  const [activeIndex, onChange] = usePager();
   const activeColor = colors[activeIndex % children.length];
 
   return (
@@ -42,28 +38,27 @@ function Tabs() {
           overflow: 'hidden',
           alignSelf: 'center',
         }}
-        animatedIndex={animatedIndex}
-        activeIndex={activeIndex}
-        pageInterpolation={tabsConfig}
-        onChange={onChange}>
+        pageInterpolation={tabsConfig}>
         {children}
       </Pager>
 
-      <Circles animatedIndex={animatedIndex} onChange={onChange}>
-        {children}
-      </Circles>
+      <Circles onChange={onChange}>{children}</Circles>
 
-      <View style={{marginVertical: 10}} />
+      <View style={{paddingTop: 30}}>
+        <Progress
+          numberOfScreens={children.length}
+          style={{height: 2, backgroundColor: activeColor}}
+        />
 
-      <Tabbar activeIndex={activeIndex} onChange={onChange}>
-        {children}
-      </Tabbar>
+        <Tabbar activeIndex={activeIndex} onChange={onChange}>
+          {children}
+        </Tabbar>
 
-      <Slider
-        numberOfScreens={children.length}
-        animatedIndex={animatedIndex}
-        style={{height: 2, backgroundColor: activeColor}}
-      />
+        <Slider
+          numberOfScreens={children.length}
+          style={{height: 2, backgroundColor: activeColor}}
+        />
+      </View>
     </View>
   );
 }
@@ -108,15 +103,11 @@ function Tabbar({children, onChange, activeIndex}: iTabbar) {
 interface iCircles {
   children: React.ReactNode;
   onChange: (nextIndex: number) => void;
-  animatedIndex: Animated.Value<number>;
 }
 
-function Circles({children, onChange, animatedIndex}: iCircles) {
+function Circles({children, onChange}: iCircles) {
   return (
-    <Pagination
-      pageInterpolation={circleConfig}
-      animatedIndex={animatedIndex}
-      style={circlesContainer}>
+    <Pagination pageInterpolation={circleConfig} style={circlesContainer}>
       {React.Children.map(children, (_, i) => (
         <Circle i={i} onPress={onChange} />
       ))}

@@ -25,7 +25,9 @@ There are additional steps to setting these up:
 
 # Examples
 
-_These examples were inspired by the docs of the awesome [react-native-snap-carousel library](https://github.com/archriss/react-native-snap-carousel)_
+<p align="center">
+These examples were inspired by the docs of the awesome [react-native-snap-carousel library](https://github.com/archriss/react-native-snap-carousel)
+</p>
 
 <p align="center" style="display: flex; justify-content: center; align-items:center; flex-wrap: wrap;">
   <img src="docs/assets/kilter-cards.gif" width="300px" style="margin: 0 10px" />
@@ -56,23 +58,37 @@ From App.js in /example directory
 ```javascript
 // App.js
 import React, { useState } from 'react';
-import {
-  SafeAreaView,
-  StyleSheet,
-  View,
-  Text,
-  Button,
-  Alert,
-  TouchableOpacity,
-} from 'react-native';
-
-console.disableYellowBox = true;
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 
 import { Pager } from '../src';
 
+const children = Array.from({ length: 10 }, (_, i) => <Slide key={i} i={i} />);
+
+function MyPager() {
+  const [activeIndex, onChange] = useState(3);
+
+  return (
+    <View>
+      <Pager
+        activeIndex={activeIndex}
+        onChange={onChange}
+        style={{
+          height: 200,
+          width: 200,
+          alignSelf: 'center',
+          overflow: 'hidden',
+        }}
+      >
+        {children}
+      </Pager>
+      <NavigationButtons activeIndex={activeIndex} onChange={onChange} />
+    </View>
+  );
+}
+
 const colors = [
-  'coral',
   'aquamarine',
+  'coral',
   'gold',
   'cadetblue',
   'crimson',
@@ -81,42 +97,33 @@ const colors = [
   'salmon',
 ];
 
-const screens = Array.from({ length: 10 }, (c, i) => (
-  <View
-    key={i}
-    style={{
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: colors[i % colors.length],
-    }}
-  >
-    <Text>{`Screen: ${i}`}</Text>
-    <Button title="Hello" onPress={() => Alert.alert('Joe')} />
-  </View>
-));
-
-const App = () => {
-  const [activeIndex, onChange] = useState(0);
-
+function Slide({ i }: { i: number }) {
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <Pager
-        activeIndex={activeIndex}
-        onChange={onChange}
-        adjacentChildOffset={2}
-      >
-        {screens}
-      </Pager>
-
-      <Buttons activeIndex={activeIndex} setActiveIndex={onChange} />
-    </SafeAreaView>
+    <View
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 10,
+        marginHorizontal: 5,
+        backgroundColor: colors[i % colors.length],
+      }}
+    >
+      <Text>{`Screen: ${i}`}</Text>
+    </View>
   );
-};
+}
 
-function Buttons({ activeIndex, onChange }) {
+function NavigationButtons({ activeIndex, onChange }: iPagerConsumer) {
   return (
-    <View style={{ height: 75, width: '100%' }}>
+    <View
+      style={{
+        height: 75,
+        width: '100%',
+        backgroundColor: 'white',
+        marginTop: 10,
+      }}
+    >
       <Text
         style={{
           fontSize: 16,
@@ -125,15 +132,21 @@ function Buttons({ activeIndex, onChange }) {
         }}
       >{`activeIndex: ${activeIndex}`}</Text>
 
-      <View style={{ flex: 1, flexDirection: 'row' }}>
+      <View
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+          marginTop: 10,
+        }}
+      >
         <TouchableOpacity
-          title="Dec"
           style={{
-            flex: 1,
             borderWidth: StyleSheet.hairlineWidth,
             borderRadius: 4,
             alignItems: 'center',
             justifyContent: 'center',
+            width: 150,
           }}
           onPress={() => onChange(activeIndex - 1)}
         >
@@ -142,11 +155,11 @@ function Buttons({ activeIndex, onChange }) {
 
         <TouchableOpacity
           style={{
-            flex: 1,
             borderWidth: StyleSheet.hairlineWidth,
             borderRadius: 4,
             alignItems: 'center',
             justifyContent: 'center',
+            width: 150,
           }}
           onPress={() => onChange(activeIndex + 1)}
         >
@@ -201,7 +214,7 @@ import { Pagination } from '@crowdlinker/react-native-pager'
 Props
 --------
 children: React.ReactNode;
-animatedIndex: Animated.Value<number>;
+animatedIndex?: Animated.Value<number>;
 pageInterpolation: iPageInterpolation;
 style?: ViewStyle;
 ```
@@ -214,7 +227,7 @@ import { Slider } from '@crowdlinker/react-native-pager'
 Props
 --------
 numberOfScreens: number;
-animatedIndex: Animated.Value<number>;
+animatedIndex?: Animated.Value<number>;
 style: ViewStyle;
 ```
 
@@ -226,8 +239,21 @@ import { Progress } from '@crowdlinker/react-native-pager'
 Props
 --------
 numberOfScreens: number;
-animatedIndex: Animated.Value<number>;
+animatedIndex?: Animated.Value<number>;
 style: ViewStyle;
+```
+
+## PagerProvider
+
+```typescript
+import { PagerProvider } from '@crowdlinker/react-native-pager'
+
+Props
+--------
+children: React.ReactNode;
+initialIndex?: number;
+activeIndex?: number;
+onChange?: (nextIndex: number) => void;
 ```
 
 ## Tabs and Stack
@@ -499,4 +525,42 @@ const circleInterpolation = {
     height: 4,
   }}
 />
+```
+
+## PagerProvider
+
+You can omit a lot of the boilerplate props from `<Pager />` components if you wrap them in a PagerProvider:
+
+```javascript
+function MyPager() {
+  // these are optional props if you want to fully control the pager
+  const [activeIndex, onChange] = useState(1);
+
+  return (
+    <PagerProvider activeIndex={activeIndex} onChange={onChange}>
+      <Pager>
+        <Screen />
+        <Screen />
+        <Screen />
+      </Pager>
+    </PagerProvider>
+  );
+}
+```
+
+If you want to access any of these values deeper in the tree, you'll want the `usePager()` hook:
+
+```javascript
+// ...somewhere in your app
+
+function Controls() {
+  const [activeIndex, onChange] = usePager();
+
+  return (
+    <View>
+      <Button title="Increment" onPress={() => onChange(activeIndex + 1)} />
+      <Button title="Decrement" onPress={() => onChange(activeIndex - 1)} />
+    </View>
+  );
+}
 ```
