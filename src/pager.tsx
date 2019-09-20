@@ -646,7 +646,10 @@ function PagerProvider({
   children,
   initialIndex = 0,
   activeIndex: parentActiveIndex,
-  onChange: parentOnChange,
+  onChange: parentOnChange = () =>
+    console.warn(
+      '<PagerProvider /> should have an onChange() prop if it is controlled'
+    ),
 }: iPagerProvider) {
   const [_activeIndex, _setActiveIndex] = useState(initialIndex);
 
@@ -660,7 +663,9 @@ function PagerProvider({
 
   return (
     <PagerContext.Provider
-      value={[activeIndex, onChange, animatedValue, animatedIndex]}
+      value={
+        [activeIndex, onChange, animatedValue, animatedIndex] as iPagerContext
+      }
     >
       {typeof children === 'function'
         ? children({ activeIndex, onChange })
