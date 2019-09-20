@@ -1,5 +1,9 @@
-import React, {useState} from 'react';
-import {Pager, iPageInterpolation} from '@crowdlinker/react-native-pager';
+import React from 'react';
+import {
+  Pager,
+  iPageInterpolation,
+  usePager,
+} from '@crowdlinker/react-native-pager';
 import {Slide, colors} from './shared-components';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 
@@ -17,12 +21,15 @@ const stackConfig: iPageInterpolation = {
 };
 
 function Stack() {
-  const [activeIndex, onChange] = useState(2);
+  const [activeIndex, onChange] = usePager();
 
   return (
     <View>
       <Pager
         activeIndex={activeIndex}
+        panProps={{
+          enabled: activeIndex !== 0,
+        }}
         onChange={onChange}
         clamp={{prev: 0.3}}
         clampDrag={{next: 0}}

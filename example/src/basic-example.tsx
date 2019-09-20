@@ -1,12 +1,29 @@
 import React, {useState} from 'react';
-import {
-  Text,
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-  Button,
-} from 'react-native';
+import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
+
+import {Pager} from '@crowdlinker/react-native-pager';
+
+const children = Array.from({length: 1000}, (_, i) => <Slide key={i} i={i} />);
+
+function MyPager() {
+  const [activeIndex, onChange] = useState(400);
+
+  return (
+    <View>
+      <Pager
+        activeIndex={activeIndex}
+        onChange={onChange}
+        style={{
+          height: 200,
+          width: 200,
+          alignSelf: 'center',
+        }}>
+        {children}
+      </Pager>
+      <NavigationButtons activeIndex={activeIndex} onChange={onChange} />
+    </View>
+  );
+}
 
 const colors = [
   'aquamarine',
@@ -20,7 +37,6 @@ const colors = [
 ];
 
 function Slide({i}: {i: number}) {
-  const [count, setCount] = useState(0);
   return (
     <View
       style={{
@@ -32,19 +48,11 @@ function Slide({i}: {i: number}) {
         backgroundColor: colors[i % colors.length],
       }}>
       <Text>{`Screen: ${i}`}</Text>
-      <TextInput placeholder="Test Update" />
-      <Text>{`Count: ${count}`}</Text>
-      <Button title="Inc" onPress={() => setCount(count + 1)} />
     </View>
   );
 }
 
-interface iPagerConsumer {
-  activeIndex: number;
-  onChange: (nextIndex: number) => void;
-}
-
-function NavigationButtons({activeIndex, onChange}: iPagerConsumer) {
+function NavigationButtons({activeIndex, onChange}) {
   return (
     <View
       style={{
@@ -95,4 +103,4 @@ function NavigationButtons({activeIndex, onChange}: iPagerConsumer) {
   );
 }
 
-export {Slide, NavigationButtons, colors};
+export {MyPager};
