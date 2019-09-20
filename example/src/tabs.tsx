@@ -119,7 +119,7 @@ const circlesContainer: ViewStyle = {
   height: 20,
   width: '70%',
   alignSelf: 'center',
-  transform: [{translateY: 15}],
+  marginTop: 10,
 };
 
 interface iCircle {

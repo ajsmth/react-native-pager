@@ -51,9 +51,10 @@ function SwipeCards() {
     <View>
       <Pager
         clamp={{next: 0}}
+        adjacentChildOffset={3}
         style={{height: 200, width: 200, alignSelf: 'center', padding: 10}}
         pageInterpolation={swipeCardsConfig}>
-        {Array.from({length: 7}, (_, i) => (
+        {Array.from({length: activeIndex + 4}, (_, i) => (
           <Slide key={i} i={i} />
         ))}
       </Pager>

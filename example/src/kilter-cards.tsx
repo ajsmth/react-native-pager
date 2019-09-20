@@ -29,8 +29,8 @@ const kilterCardsConfig: iPageInterpolation = {
   ],
 
   opacity: {
-    inputRange: [-2, -1, 0, 1, 2, 3],
-    outputRange: [0, 0, 1, 1, 1, 0],
+    inputRange: [-2, -1, 0, 1, 2, 3, 4],
+    outputRange: [0, 0, 1, 1, 1, 0, 0],
   },
 };
 
@@ -44,9 +44,10 @@ function KilterCards() {
         onChange={onChange}
         clamp={{next: 0}}
         threshold={0.3}
+        adjacentChildOffset={5}
         style={{height: 200, width: 200, alignSelf: 'center', padding: 10}}
         pageInterpolation={kilterCardsConfig}>
-        {Array.from({length: 7}, (_, i) => (
+        {Array.from({length: activeIndex + 3}, (_, i) => (
           <Slide key={i} i={i} />
         ))}
       </Pager>

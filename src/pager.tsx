@@ -5,6 +5,7 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  memo,
 } from 'react';
 import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -432,32 +433,6 @@ function Pager({
     ])
   );
 
-  // memoize the clamp values -- since its an object these are a bit of a pain
-  // to keep from triggering rerenders in <Page /> components
-  // not sure if these are necessary, as theres so much memoization going on that
-  // these updates aren't reactive (yet)
-  clamp = useMemo(() => {
-    if (!clamp) {
-      return {
-        prev: REALLY_BIG_NUMBER,
-        next: REALLY_BIG_NUMBER,
-      };
-    }
-
-    return clamp;
-  }, [clamp.prev, clamp.next]);
-
-  clampDrag = useMemo(() => {
-    if (!clampDrag) {
-      return {
-        prev: REALLY_BIG_NUMBER,
-        next: REALLY_BIG_NUMBER,
-      };
-    }
-
-    return clampDrag;
-  }, [clampDrag.prev, clampDrag.next]);
-
   // compute the minimum and maximum distance from the active screen window
   // these are min-maxed in <Page /> to enable control of their positioning
 
@@ -534,7 +509,6 @@ function Pager({
               // the keys of these children by there index
               // React.Children shifts these key values intelligently, but it
               // causes issues with the memoized values in <Page /> components
-
               let index = i;
 
               if (adjacentChildOffset !== undefined) {
@@ -579,7 +553,7 @@ interface iPage {
   clampNext: Animated.Node<number>;
 }
 
-function Page({
+function _Page({
   index,
   dimension,
   translation,
@@ -596,18 +570,18 @@ function Page({
   // to properly position pages
   const position = memoize(multiply(index, dimension));
 
-  // compute the relative value to the current translation (__not__ index) so
-  // that <Page /> can use interpolation values that are in sync with drag gestures
-  const offset = memoize(divide(add(translation, position), max(dimension, 1)));
-
-  const defaultStyle = {
+  const defaultStyle = memoize({
     // map to height / width value depending on vertical / horizontal configuration
     [targetDimension]: dimension,
     // min-max the position based on clamp values
     // this means the <Page /> will have a container that is always positioned
     // in the same place, but the inner view can be translated within these bounds
     transform: [{ [translateValue]: min(max(position, clampPrev), clampNext) }],
-  };
+  });
+
+  // compute the relative offset value to the current translation (__not__ index) so
+  // that <Page /> can use interpolation values that are in sync with drag gestures
+  const offset = memoize(divide(add(translation, position), max(dimension, 1)));
 
   // apply interpolation configs to <Page />
   const interpolatedStyles = memoize(
@@ -625,20 +599,32 @@ function Page({
     zIndex = -index;
   }
 
+  // prevent initial style interpolations from bleeding through by delaying the view
+  // appearance until it has first laid out, otherwise there are some flashes of transformation
+  // as the page enters the view
+  const [initialized, setInitialized] = useState(false);
+  function handleLayout() {
+    setInitialized(true);
+  }
+
   return (
     <Animated.View
+      onLayout={handleLayout}
       style={{
         ...StyleSheet.absoluteFillObject,
         ...defaultStyle,
+        opacity: initialized ? 1 : 0,
         zIndex: zIndex,
       }}
     >
-      <Animated.View style={[{ flex: 1 }, otherStyles]}>
+      <Animated.View style={[StyleSheet.absoluteFillObject, otherStyles]}>
         {children}
       </Animated.View>
     </Animated.View>
   );
 }
+
+const Page = memo(_Page);
 
 type iPagerContext = [
   number,

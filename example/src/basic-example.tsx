@@ -3,10 +3,10 @@ import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
 
 import {Pager} from '@crowdlinker/react-native-pager';
 
-const children = Array.from({length: 10}, (_, i) => <Slide key={i} i={i} />);
+const children = Array.from({length: 1000}, (_, i) => <Slide key={i} i={i} />);
 
 function MyPager() {
-  const [activeIndex, onChange] = useState(3);
+  const [activeIndex, onChange] = useState(400);
 
   return (
     <View>
@@ -17,7 +17,6 @@ function MyPager() {
           height: 200,
           width: 200,
           alignSelf: 'center',
-          overflow: 'hidden',
         }}>
         {children}
       </Pager>
@@ -53,7 +52,7 @@ function Slide({i}: {i: number}) {
   );
 }
 
-function NavigationButtons({activeIndex, onChange}: iPagerConsumer) {
+function NavigationButtons({activeIndex, onChange}) {
   return (
     <View
       style={{

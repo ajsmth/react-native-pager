@@ -2,8 +2,6 @@ import React, {useState} from 'react';
 import {Pager, iPageInterpolation} from '@crowdlinker/react-native-pager';
 import {Slide, NavigationButtons} from './shared-components';
 import {View} from 'react-native';
-import Animated from 'react-native-reanimated';
-const {divide, floor} = Animated;
 
 const stackedCardsConfig: iPageInterpolation = {
   transform: [
@@ -18,12 +16,6 @@ const stackedCardsConfig: iPageInterpolation = {
       },
     },
   ],
-  opacity: {
-    inputRange: [-2, -1, 0, 1, 2, 3],
-    outputRange: [0, 1, 1, 1, 0.9, 0],
-  },
-
-  zIndex: offset => floor(divide(offset, -1)),
 };
 
 function StackedCards() {
