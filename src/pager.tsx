@@ -151,46 +151,16 @@ function Pager({
   },
   animatedIndex: parentAnimatedIndex,
 }: PagerProps) {
-  clamp = useMemo(() => {
-    if (!clamp) {
-      return {
-        prev: REALLY_BIG_NUMBER,
-        next: REALLY_BIG_NUMBER,
-      };
-    }
-
-    return clamp;
-  }, [clamp.prev, clamp.next]);
-
-  clampDrag = useMemo(() => {
-    if (!clampDrag) {
-      return {
-        prev: REALLY_BIG_NUMBER,
-        next: REALLY_BIG_NUMBER,
-      };
-    }
-
-    return clampDrag;
-  }, [clampDrag.prev, clampDrag.next]);
-
-  const dragX = memoize(new Value(0));
-  const dragY = memoize(new Value(0));
-  const gestureState = memoize(new Value(-1));
-
-  const clock = memoize(new Clock());
-
-  const swiping = memoize(new Value(0));
-  const dragStart = memoize(new Value(0));
-
+  // register these props if they exist -- they can be shared with other
+  // components to keep the translation values in sync
   const translationValue = memoize(animatedValue || new Value(0));
-
-  const position = memoize(new Value(initialIndex));
-  const nextPosition = memoize(new Value(0));
-
-  const isControlled = parentActiveIndex !== undefined;
+  const animatedIndex = memoize(parentAnimatedIndex || new Value(0));
 
   const [_activeIndex, _onChange] = useState(initialIndex);
 
+  // assign activeIndex and onChange correctly based on controlled / uncontrolled
+  // configurations
+  const isControlled = parentActiveIndex !== undefined;
   const activeIndex = isControlled ? parentActiveIndex : (_activeIndex as any);
   const onChange = isControlled ? parentOnChange : (_onChange as any);
 
@@ -203,11 +173,16 @@ function Pager({
       ? Math.ceil((numberOfScreens - 1) / pageSize)
       : parentMax;
 
+  // set this up on first render, and update when the value from above changes
   const maxIndex = memoize(new Value(maxIndexValue));
 
   useEffect(() => {
     maxIndex.setValue(maxIndexValue);
-  }, [numberOfScreens, pageSize, parentMax]);
+  }, [maxIndexValue]);
+
+  const dragX = memoize(new Value(0));
+  const dragY = memoize(new Value(0));
+  const gestureState = memoize(new Value(-1));
 
   const handleGesture = memoize(
     event(
@@ -238,51 +213,37 @@ function Pager({
     )
   );
 
+  // these dimensions are used to compute the layout of child screens
+  // they are also used to determine the behaviour of the pager for things like
+  // drag threshold, and how large an individual page might be
   const width = memoize(new Value(0));
   const height = memoize(new Value(0));
-
-  const targetDimension = type === 'vertical' ? 'height' : 'width';
-  const dimension = type === 'vertical' ? height : width;
-  const translateValue = type === 'vertical' ? 'translateY' : 'translateX';
-  const dragValue = type === 'vertical' ? dragY : dragX;
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
     width.setValue(layout.width as any);
     height.setValue(layout.height as any);
 
+    // this sets the initial offset to the correct translation w/o animation
+    // e.g an initial index of 4 will be centered when layout registers
     translationValue.setValue((activeIndex *
       layout[targetDimension] *
       -1) as any);
   }
 
-  useEffect(() => {
-    nextPosition.setValue(activeIndex);
-  }, [activeIndex]);
+  // correctly assign variables based on vertical / horizontal configurations
+  const targetDimension = type === 'vertical' ? 'height' : 'width';
+  const dimension = type === 'vertical' ? height : width;
+  const translateValue = type === 'vertical' ? 'translateY' : 'translateX';
+  const dragValue = type === 'vertical' ? dragY : dragX;
 
-  const clampedDragPrev =
-    clampDrag.prev !== undefined ? clampDrag.prev : REALLY_BIG_NUMBER;
-
-  const clampedDragNext =
-    clampDrag.next !== undefined ? clampDrag.next : REALLY_BIG_NUMBER;
-
-  const clampedDragValue = memoize(
-    max(min(clampedDragPrev, dragValue), multiply(clampedDragNext, -1))
-  );
-
-  const percentDragged = memoize(divide(clampedDragValue, dimension));
-
-  const numberOfPagesDragged = memoize(
-    ceil(divide(abs(percentDragged), pageSize))
-  );
-
-  const nextIndex = memoize(min(add(position, numberOfPagesDragged), maxIndex));
-  const prevIndex = memoize(max(sub(position, numberOfPagesDragged), minIndex));
-  const shouldTransition = memoize(greaterThan(abs(percentDragged), threshold));
-
+  // compute the total size of a page to determine how far to snap
   const page = useMemo(() => multiply(dimension, pageSize), [
     dimension,
     pageSize,
   ]);
+
+  // only need one clock
+  const clock = memoize(new Clock());
 
   const runSpring = memoize((nextIndex: Animated.Node<number>) => {
     const state = {
@@ -306,6 +267,8 @@ function Pager({
         [
           set(state.position, translationValue),
           set(state.finished, 0),
+          // only set the toValue when needed
+          // this block runs a lot, hopefully this helps with performance
           cond(
             neq(config.toValue, nextPosition),
             set(config.toValue, nextPosition)
@@ -322,12 +285,68 @@ function Pager({
       ),
       spring(clock, state, config),
       cond(state.finished, [stopClock(clock), set(state.time, 0)]),
+      // keep the animatedIndex value in sync with any changes to position
       set(animatedIndex, divide(state.position, max(dimension, 1), -1)),
       state.position,
     ]);
   });
 
-  const animatedIndex = memoize(parentAnimatedIndex || new Value(0));
+  // most important parts of the following function:
+  // `swiping` is used to determine how the activeIndex changed
+  //  if an index change occurs and the state is swiping, its safe to say
+  //  it occured by user action, and not an external / parent activeIndex prop change
+  const swiping = memoize(new Value(0));
+  const dragStart = memoize(new Value(0));
+
+  // position is a different name for the current index registered with the <Pager />
+  // it does not necessarily reflect the activeIndex in all states
+  const position = memoize(new Value(initialIndex));
+
+  // `nextPosition` is computed every frame (could be optimized probably)
+  // and the value is used on release to snap to a given index offset
+  // updating this value will trigger the spring to snap when the user releases or
+  // if the activeIndex prop changes
+  const nextPosition = memoize(new Value(0));
+
+  // not sure if Animated.useCode is any better here, it seemed to fire much more
+  // frequently than activeIndex was actually changing.
+  useEffect(() => {
+    nextPosition.setValue(activeIndex);
+  }, [activeIndex, nextPosition]);
+
+  // compute the next snap point - it could be multiply screens depending
+  // on how far the user has dragged and what pageSize value is
+  const clampedDragPrev =
+    clampDrag.prev !== undefined ? clampDrag.prev : REALLY_BIG_NUMBER;
+
+  const clampedDragNext =
+    clampDrag.next !== undefined ? clampDrag.next : REALLY_BIG_NUMBER;
+
+  // clamps the drag value between previous and next values
+  // this defaults to a really large amount so there is no real clamping
+  // but it can be use to prevent the user from swiping in a certain direction
+  // e.g clampDragNext value of 0 means the user cannot swipe to the next screen
+  // at all
+  const clampedDragValue = memoize(
+    max(min(clampedDragPrev, dragValue), multiply(clampedDragNext, -1))
+  );
+
+  const percentDragged = memoize(divide(clampedDragValue, dimension));
+
+  // use pageSize to determine how many screens the user has dragged
+  // the default is 100% of a page
+  const numberOfPagesDragged = memoize(
+    ceil(divide(abs(percentDragged), pageSize))
+  );
+
+  // next and previous indices based on how far the user has dragged, accounting
+  // for the potential of dragging past the min/max index values of the <Pager />
+  const nextIndex = memoize(min(add(position, numberOfPagesDragged), maxIndex));
+  const prevIndex = memoize(max(sub(position, numberOfPagesDragged), minIndex));
+
+  // if shouldTransition evaluates to true, it will snap to either previous or next
+  // depending on the direction of the drag
+  const shouldTransition = memoize(greaterThan(abs(percentDragged), threshold));
 
   const translation = memoize(
     block([
@@ -345,6 +364,9 @@ function Pager({
               position
             )
           ),
+          // `animatedIndex` is updated here to track index changes as an animated value
+          // this means it can have intermediate values (e.g 1.23) which is an easier value
+          // for other components (e.g Pagination) to consume
           set(
             animatedIndex,
             divide(add(clampedDragValue, dragStart), max(dimension, 1), -1)
@@ -352,6 +374,18 @@ function Pager({
           set(translationValue, add(clampedDragValue, dragStart)),
         ],
 
+        // on release or index change, the following runs:
+
+        // if the position has changed then alert the active onChange callback
+        // its better to use it in this block rather than Animated.onChange,
+        // as it seems to fire mid block and start other blocks, causing the potential
+        // for a loop of updates to activeIndex on rapid index changes that the component
+        // can't resolve
+
+        // note that the onChange callback only needs to be updated if a user was swiping,
+        // otherwise it must have come from a controlled prop, in which case that
+        // component already knows the activeIndex
+        // this prevents another potential rerender from an incorrect increment / decrement
         [
           cond(neq(position, nextPosition), [
             set(position, nextPosition),
@@ -367,10 +401,75 @@ function Pager({
     ])
   );
 
+  // memoize the clamp values -- since its an object these are a bit of a pain
+  // to keep from triggering rerenders in <Page /> components
+  // not sure if these are necessary, as theres so much memoization going on that
+  // these updates aren't reactive (yet)
+  clamp = useMemo(() => {
+    if (!clamp) {
+      return {
+        prev: REALLY_BIG_NUMBER,
+        next: REALLY_BIG_NUMBER,
+      };
+    }
+
+    return clamp;
+  }, [clamp.prev, clamp.next]);
+
+  clampDrag = useMemo(() => {
+    if (!clampDrag) {
+      return {
+        prev: REALLY_BIG_NUMBER,
+        next: REALLY_BIG_NUMBER,
+      };
+    }
+
+    return clampDrag;
+  }, [clampDrag.prev, clampDrag.next]);
+
+  // compute the minimum and maximum distance from the active screen window
+  // these are min-maxed in <Page /> to enable control of their positioning
+
+  // inverse used here to make the mental math a little less complex
+  // since screens are positioned starting from 0 to totalDimension
+  // and translation values are 0 to -totalDimension
+  const inverseTranslate = memoize(multiply(translation, -1));
+
+  // the max distance a screen can have from the active window should be
+  // the max number of possible screens that the pager will render (numberOfScreens)
+  // hence that is the default value when undefined
+  const clampPrevValue =
+    clamp.prev !== undefined ? clamp.prev : numberOfScreens;
+  const clampNextValue =
+    clamp.next !== undefined ? clamp.next : numberOfScreens;
+
+  // determine how far offset previous / next screens can possibly be
+  // this will clamp them on either side of the active window if a value
+  // is specified
+  const clampPrev = memoize(
+    sub(inverseTranslate, multiply(dimension, clampPrevValue))
+  );
+
+  const clampNext = memoize(
+    add(inverseTranslate, multiply(dimension, clampNextValue))
+  );
+
+  // convert to array since children is mapped to <Page />
+  // array structure is crucial to maintaining proper index `key` values
+  // on child screens, and allows them to memoize their individual
+  // computations / transformations
   if (numberOfScreens === 1) {
     children = [children];
   }
 
+  // slice the children that are rendered by the <Pager />
+  // this enables very large child lists to render efficiently
+  // the downside is that children are unmounted after they pass this threshold
+  // it's an optional prop, however a default value of ~20 is set here to prevent
+  // possible performance bottlenecks to those not aware of the prop or what it does
+
+  // this will slice adjacentChildOffset number of children previous and after
+  // the current active child index into a smaller child array
   const adjacentChildren =
     adjacentChildOffset !== undefined
       ? children.slice(
@@ -379,35 +478,10 @@ function Pager({
         )
       : children;
 
-  const totalDimension = useMemo(() => {
-    return multiply(dimension, numberOfScreens);
-  }, [dimension, numberOfScreens]);
-
-  const inverseTranslate = memoize(multiply(translation, -1));
-
-  const minimumOffset = useMemo(
-    () =>
-      sub(
-        inverseTranslate,
-        multiply(
-          dimension,
-          clamp.prev !== undefined ? clamp.prev : REALLY_BIG_NUMBER
-        )
-      ),
-    [dimension, clamp.prev]
-  );
-
-  const maximumOffset = useMemo(
-    () =>
-      add(
-        inverseTranslate,
-        multiply(
-          dimension,
-          clamp.next !== undefined ? clamp.next : REALLY_BIG_NUMBER
-        )
-      ),
-    [dimension, clamp.next]
-  );
+  // `totalDimension` on the container view is required for android layouts to work properly
+  // otherwise translations move the panHandler off of the screen
+  // set the total width of the container view to the sum width of all the screens
+  const totalDimension = memoize(multiply(dimension, numberOfScreens));
 
   return (
     <Animated.View style={style || { flex: 1 }} onLayout={handleLayout}>
@@ -447,9 +521,8 @@ function Pager({
                   translation={translation}
                   targetDimension={targetDimension}
                   translateValue={translateValue}
-                  clamp={clamp}
-                  clampPrev={minimumOffset}
-                  clampNext={maximumOffset}
+                  clampPrev={clampPrev}
+                  clampNext={clampNext}
                   pageInterpolation={pageInterpolation}
                 >
                   {child}
@@ -469,10 +542,6 @@ interface iPage {
   translation: Animated.Node<number>;
   targetDimension: 'width' | 'height';
   translateValue: 'translateX' | 'translateY';
-  clamp: {
-    prev?: number;
-    next?: number;
-  };
   pageInterpolation?: iPageInterpolation;
   children: React.ReactNode;
   clampPrev: Animated.Node<number>;
@@ -490,18 +559,37 @@ function Page({
   pageInterpolation,
   children,
 }: iPage) {
+  // compute the absolute position of the page based on index and dimension
+  // this means that it's not relative to any other child, which is good because
+  // it doesn't rely on a mechanism like flex, which requires all children to be present
+  // to properly position pages
   const position = memoize(multiply(index, dimension));
+
+  // compute the relative value to the current translation (__not__ index) so
+  // that <Page /> can use interpolation values that are in sync with drag gestures
   const offset = memoize(divide(add(translation, position), max(dimension, 1)));
 
   const defaultStyle = {
+    // map to height / width value depending on vertical / horizontal configuration
     [targetDimension]: dimension,
+    // min-max the position based on clamp values
+    // this means the <Page /> will have a container that is always positioned
+    // in the same place, but the inner view can be translated within these bounds
     transform: [{ [translateValue]: min(max(position, clampPrev), clampNext) }],
   };
 
-  const innerStyle = memoize(mapConfigToStyle(offset, pageInterpolation));
+  // apply interpolation configs to <Page />
+  const interpolatedStyles = memoize(
+    mapConfigToStyle(offset, pageInterpolation)
+  );
 
-  let { zIndex, ...otherStyles } = innerStyle;
+  // take out zIndex here as it needs to be applied to siblings, which inner containers
+  // are not, however the outer container requires the absolute translateX/Y to properly
+  // position itself
+  let { zIndex, ...otherStyles } = interpolatedStyles;
 
+  // zIndex is not a requirement of interpolation
+  // it will be clear when someone needs it as views will overlap with some configurations
   if (!zIndex) {
     zIndex = -index;
   }
