@@ -12,7 +12,7 @@ import Animated from 'react-native-reanimated';
 import {
   PanGestureHandler,
   State,
-  GestureHandlerProperties,
+  PanGestureHandlerProperties,
 } from 'react-native-gesture-handler';
 import { memoize, mapConfigToStyle } from './util';
 
@@ -104,7 +104,7 @@ export interface PagerProps {
   children: React.ReactNode[];
   springConfig?: Partial<SpringConfig>;
   pageInterpolation?: iPageInterpolation;
-  panProps?: Partial<GestureHandlerProperties>;
+  panProps?: Partial<PanGestureHandlerProperties>;
   pageSize?: number;
   threshold?: number;
   minIndex?: number;
