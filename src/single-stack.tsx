@@ -48,6 +48,7 @@ const {
   greaterOrEq,
   lessOrEq,
   ceil,
+  diff,
 } = Animated;
 
 interface iSingleStack {
@@ -326,7 +327,7 @@ function PageContainer({
     <Animated.View
       style={[
         StyleSheet.absoluteFillObject,
-        { zIndex: 2, overflow: 'hidden' },
+        { zIndex: 2 },
         { transform: [{ [translateValue]: translation }] as any },
       ]}
     >
@@ -383,6 +384,8 @@ function Page({
   const position = memoize(new Value(0));
   const zIndex = memoize(new Value(0));
 
+  const offset = memoize(multiply(dimension, parentOffset));
+
   const isActive = memoize(eq(activeIndex, index));
   // if dragging value or active value is within range of this container
   const containerIsActive = memoize(
@@ -395,12 +398,17 @@ function Page({
   // when the container becomes inactive
   const nextPosition = memoize(
     block([
+      // set initial position
+      cond(greaterThan(diff(dimension), 0), [
+        set(position, cond(isActive, 0, offset)),
+      ]),
+
       cond(
         swiping,
         cond(
           isActive,
           [set(position, 0)],
-          [set(zIndex, 0), set(position, multiply(dimension, parentOffset))]
+          [set(zIndex, 0), set(position, offset)]
         )
       ),
 
@@ -409,14 +417,7 @@ function Page({
       cond(
         isActive,
         [set(zIndex, 1), 0],
-        [
-          set(zIndex, 0),
-          cond(
-            containerIsActive,
-            [set(position, multiply(dimension, parentOffset))],
-            set(position, 0)
-          ),
-        ]
+        [set(zIndex, 0), cond(containerIsActive, offset, set(position, 0))]
       ),
     ])
   );

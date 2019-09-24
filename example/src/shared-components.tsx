@@ -1,12 +1,5 @@
 import React, {useState} from 'react';
-import {
-  Text,
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-  Button,
-} from 'react-native';
+import {Text, View, TouchableOpacity, StyleSheet} from 'react-native';
 
 const colors = [
   'aquamarine',
@@ -42,9 +35,14 @@ function Slide({i}: {i: number}) {
 interface iPagerConsumer {
   activeIndex: number;
   onChange: (nextIndex: number) => void;
+  incrementBy?: number;
 }
 
-function NavigationButtons({activeIndex, onChange}: iPagerConsumer) {
+function NavigationButtons({
+  activeIndex,
+  onChange,
+  incrementBy = 1,
+}: iPagerConsumer) {
   return (
     <View
       style={{
@@ -75,7 +73,7 @@ function NavigationButtons({activeIndex, onChange}: iPagerConsumer) {
             justifyContent: 'center',
             width: 150,
           }}
-          onPress={() => onChange(activeIndex - 1)}>
+          onPress={() => onChange(activeIndex - incrementBy)}>
           <Text>{`<`}</Text>
         </TouchableOpacity>
 
@@ -85,9 +83,9 @@ function NavigationButtons({activeIndex, onChange}: iPagerConsumer) {
             borderRadius: 4,
             alignItems: 'center',
             justifyContent: 'center',
-            width: 150,
+            width: 50,
           }}
-          onPress={() => onChange(activeIndex + 1)}>
+          onPress={() => onChange(activeIndex + incrementBy)}>
           <Text>{`>`}</Text>
         </TouchableOpacity>
       </View>
