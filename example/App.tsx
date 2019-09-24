@@ -18,6 +18,7 @@ import {SwipeCards} from './src/swipe-cards';
 import {Stack} from './src/stack';
 import {Tabs} from './src/tabs';
 import {MyPager} from './src/basic-example';
+import {SingleStackExample} from './src/single-stack-example';
 import {PagerProvider} from '@crowdlinker/react-native-pager';
 
 const App = () => {
@@ -32,7 +33,7 @@ const App = () => {
     <View style={{flex: 1, backgroundColor: 'white'}}>
       <SafeAreaView style={{flex: 1, justifyContent: 'center'}}>
         <PagerProvider activeIndex={activeIndex} onChange={onChange}>
-          <MyPager />
+          <SingleStackExample />
         </PagerProvider>
       </SafeAreaView>
     </View>

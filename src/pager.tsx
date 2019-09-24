@@ -16,7 +16,7 @@ import {
 } from 'react-native-gesture-handler';
 import { memoize, mapConfigToStyle } from './util';
 
-type SpringConfig = {
+export type SpringConfig = {
   damping: Animated.Adaptable<number>;
   mass: Animated.Adaptable<number>;
   stiffness: Animated.Adaptable<number>;
@@ -42,7 +42,7 @@ interface InterpolationConfig {
 }
 
 type iInterpolationFn = (
-  offset: Animated.Value<number>
+  offset: Animated.Node<number>
 ) => Animated.Node<number>;
 
 interface iInterpolationConfig extends InterpolationConfig {
@@ -684,4 +684,4 @@ function usePager(): iPagerContext {
   return context;
 }
 
-export { Pager, PagerProvider, usePager };
+export { Pager, PagerProvider, usePager, PagerContext };
