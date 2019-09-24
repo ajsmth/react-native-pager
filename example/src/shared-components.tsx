@@ -32,9 +32,9 @@ function Slide({i}: {i: number}) {
         backgroundColor: colors[i % colors.length],
       }}>
       <Text>{`Screen: ${i}`}</Text>
-      <TextInput placeholder="Test Update" />
+      {/* <TextInput placeholder="Test Update" />
       <Text>{`Count: ${count}`}</Text>
-      <Button title="Inc" onPress={() => setCount(count + 1)} />
+      <Button title="Inc" onPress={() => setCount(count + 1)} /> */}
     </View>
   );
 }
