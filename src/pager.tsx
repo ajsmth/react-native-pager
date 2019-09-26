@@ -343,7 +343,9 @@ function Pager({
   // not sure if Animated.useCode is any better here, it seemed to fire much more
   // frequently than activeIndex was actually changing.
   useEffect(() => {
-    nextPosition.setValue(activeIndex);
+    if (activeIndex >= minIndex && activeIndex <= maxIndexValue) {
+      nextPosition.setValue(activeIndex);
+    }
   }, [activeIndex, nextPosition]);
 
   // compute the next snap point - it could be multiply screens depending
