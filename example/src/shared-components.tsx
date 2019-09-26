@@ -12,7 +12,7 @@ const colors = [
   'salmon',
 ];
 
-function Slide({i}: {i: number}) {
+function Slide({i, focused}: {i: number; focused: boolean}) {
   const [count, setCount] = useState(0);
   return (
     <View
@@ -25,6 +25,7 @@ function Slide({i}: {i: number}) {
         backgroundColor: colors[i % colors.length],
       }}>
       <Text>{`Screen: ${i}`}</Text>
+      <Text>{`Focused: ${focused}`}</Text>
       {/* <TextInput placeholder="Test Update" />
       <Text>{`Count: ${count}`}</Text>
       <Button title="Inc" onPress={() => setCount(count + 1)} /> */}
@@ -83,7 +84,7 @@ function NavigationButtons({
             borderRadius: 4,
             alignItems: 'center',
             justifyContent: 'center',
-            width: 50,
+            width: 150,
           }}
           onPress={() => onChange(activeIndex + incrementBy)}>
           <Text>{`>`}</Text>

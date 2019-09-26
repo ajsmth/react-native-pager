@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   memo,
+  cloneElement,
 } from 'react';
 import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -532,7 +533,7 @@ function Pager({
                   clampNext={clampNext}
                   pageInterpolation={pageInterpolation}
                 >
-                  {child}
+                  {cloneElement(child, { focused: activeIndex === index })}
                 </Page>
               );
             })}
