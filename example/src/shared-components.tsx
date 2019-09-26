@@ -12,7 +12,7 @@ const colors = [
   'salmon',
 ];
 
-function Slide({i, focused}: {i: number; focused: boolean}) {
+function Slide({i, focused}: {i: number; focused?: boolean}) {
   const [count, setCount] = useState(0);
   return (
     <View

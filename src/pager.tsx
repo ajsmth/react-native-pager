@@ -463,14 +463,6 @@ function Pager({
     add(inverseTranslate, multiply(dimension, clampNextValue))
   );
 
-  // convert to array since children is mapped to <Page />
-  // array structure is crucial to maintaining proper index `key` values
-  // on child screens, and allows them to memoize their individual
-  // computations / transformations
-  if (numberOfScreens === 1) {
-    children = [children];
-  }
-
   // slice the children that are rendered by the <Pager />
   // this enables very large child lists to render efficiently
   // the downside is that children are unmounted after they pass this threshold
