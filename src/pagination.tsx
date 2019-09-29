@@ -1,10 +1,10 @@
 import React, { Children, useRef } from 'react';
 import Animated from 'react-native-reanimated';
-import { ViewStyle, LayoutChangeEvent } from 'react-native';
+import { ViewStyle, LayoutChangeEvent, View } from 'react-native';
 import { iPageInterpolation, usePager } from './pager';
 import { memoize, mapConfigToStyle, safelyUpdateValues } from './util';
 
-const { sub, Value, divide, multiply, add } = Animated;
+const { sub, Value, divide, multiply, add, block, debug } = Animated;
 
 interface iPagination {
   children: React.ReactNode;
@@ -26,6 +26,7 @@ function Pagination({
   style,
 }: iPagination) {
   const context = usePager();
+
   const animatedIndex =
     parentAnimatedIndex !== undefined
       ? parentAnimatedIndex
@@ -105,12 +106,9 @@ function Slider({
       : new Value(0);
 
   const width = memoize(new Value(0));
-  const request = useRef<undefined | number>(undefined);
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
-    safelyUpdateValues(() => {
-      width.setValue(layout.width as any);
-    }, request);
+    width.setValue(layout.width as any);
   }
 
   const sliderWidth = divide(width, numberOfScreens);
@@ -145,22 +143,17 @@ function Progress({
       : new Value(0);
 
   const width = memoize(new Value(0));
-  const request = useRef<undefined | number>(undefined);
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
-    safelyUpdateValues(() => {
-      width.setValue(layout.width as any);
-    }, request);
+    width.setValue(layout.width as any);
   }
 
-  const sliderWidth = divide(
-    width,
-    numberOfScreens,
-    divide(1, add(animatedIndex, 1))
+  const sliderWidth = memoize(
+    divide(width, numberOfScreens, divide(1, add(animatedIndex, 1)))
   );
 
   return (
-    <Animated.View onLayout={handleLayout}>
+    <View onLayout={handleLayout}>
       <Animated.View
         style={{
           width: sliderWidth,
@@ -170,7 +163,7 @@ function Progress({
           ...style,
         }}
       />
-    </Animated.View>
+    </View>
   );
 }
 
