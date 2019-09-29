@@ -60,7 +60,7 @@ From App.js in /example directory
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 
-import { Pager } from '@crowdlinker/react-native-pager';
+import { Pager, useFocus } from '@crowdlinker/react-native-pager';
 
 const children = Array.from({ length: 1000 }, (_, i) => (
   <Slide key={i} i={i} />
@@ -99,6 +99,7 @@ const colors = [
 ];
 
 function Slide({ i }: { i: number }) {
+  const focused = useFocus();
   return (
     <View
       style={{
@@ -111,6 +112,7 @@ function Slide({ i }: { i: number }) {
       }}
     >
       <Text>{`Screen: ${i}`}</Text>
+      <Text>{`Focused: ${focused}`}</Text>
     </View>
   );
 }

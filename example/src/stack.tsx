@@ -55,7 +55,7 @@ function Stack() {
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-          <Text style={{color: colors[activeIndex]}}>Push</Text>
+          <Text style={{color: colors[activeIndex % colors.length]}}>Push</Text>
         </TouchableOpacity>
       </View>
     </View>

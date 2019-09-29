@@ -18,7 +18,6 @@ import {SwipeCards} from './src/swipe-cards';
 import {Stack} from './src/stack';
 import {Tabs} from './src/tabs';
 import {MyPager} from './src/basic-example';
-import {SingleStackExample} from './src/single-stack-example';
 import {PagerProvider} from '@crowdlinker/react-native-pager';
 
 const App = () => {

@@ -1,5 +1,13 @@
 import React, {useState} from 'react';
-import {Text, View, TouchableOpacity, StyleSheet} from 'react-native';
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  Button,
+} from 'react-native';
+import {useFocus} from '@crowdlinker/react-native-pager';
 
 const colors = [
   'aquamarine',
@@ -12,8 +20,10 @@ const colors = [
   'salmon',
 ];
 
-function Slide({i, focused}: {i: number; focused?: boolean}) {
-  const [count, setCount] = useState(0);
+function Slide({i}: {i: number}) {
+  // const [count, setCount] = useState(0);
+  const focused = useFocus();
+
   return (
     <View
       style={{

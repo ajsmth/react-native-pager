@@ -6,7 +6,7 @@ import React, {
   useContext,
   useEffect,
   memo,
-  cloneElement,
+  useRef,
 } from 'react';
 import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -15,7 +15,7 @@ import {
   State,
   PanGestureHandlerProperties,
 } from 'react-native-gesture-handler';
-import { memoize, mapConfigToStyle } from './util';
+import { memoize, mapConfigToStyle, safelyUpdateValues } from './util';
 
 export type SpringConfig = {
   damping: Animated.Adaptable<number>;
@@ -98,7 +98,7 @@ const DEFAULT_SPRING_CONFIG = {
   restSpeedThreshold: 0.01,
 };
 
-export interface PagerProps {
+export interface iPager {
   activeIndex?: number;
   onChange?: (nextIndex: number) => void;
   initialIndex?: number;
@@ -152,7 +152,7 @@ function Pager({
     next: REALLY_BIG_NUMBER,
   },
   animatedIndex: parentAnimatedIndex,
-}: PagerProps) {
+}: iPager) {
   const context = useContext(PagerContext);
 
   // register these props if they exist -- they can be shared with other
@@ -209,8 +209,11 @@ function Pager({
   // set this up on first render, and update when the value from above changes
   const maxIndex = memoize(new Value(maxIndexValue));
 
+  const maxIndexUpdateReq = useRef<undefined | number>(undefined);
   useEffect(() => {
-    maxIndex.setValue(maxIndexValue);
+    safelyUpdateValues(() => {
+      maxIndex.setValue(maxIndexValue);
+    }, maxIndexUpdateReq);
   }, [maxIndexValue]);
 
   const dragX = memoize(new Value(0));
@@ -252,15 +255,19 @@ function Pager({
   const width = memoize(new Value(0));
   const height = memoize(new Value(0));
 
-  function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
-    width.setValue(layout.width as any);
-    height.setValue(layout.height as any);
+  const layoutRequest = useRef<undefined | number>(undefined);
 
-    // this sets the initial offset to the correct translation w/o animation
-    // e.g an initial index of 4 will be centered when layout registers
-    translationValue.setValue((activeIndex *
-      layout[targetDimension] *
-      -1) as any);
+  function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
+    safelyUpdateValues(() => {
+      width.setValue(layout.width as any);
+      height.setValue(layout.height as any);
+
+      // this sets the initial offset to the correct translation w/o animation
+      // e.g an initial index of 4 will be centered when layout registers
+      translationValue.setValue((activeIndex *
+        layout[targetDimension] *
+        -1) as any);
+    }, layoutRequest);
   }
 
   // correctly assign variables based on vertical / horizontal configurations
@@ -343,9 +350,14 @@ function Pager({
 
   // not sure if Animated.useCode is any better here, it seemed to fire much more
   // frequently than activeIndex was actually changing.
+
+  const indexChangeRequest = useRef<undefined | number>(undefined);
+
   useEffect(() => {
     if (activeIndex >= minIndex && activeIndex <= maxIndexValue) {
-      nextPosition.setValue(activeIndex);
+      safelyUpdateValues(() => {
+        nextPosition.setValue(activeIndex);
+      }, indexChangeRequest);
     }
   }, [activeIndex, nextPosition]);
 
@@ -525,7 +537,9 @@ function Pager({
                   clampNext={clampNext}
                   pageInterpolation={pageInterpolation}
                 >
-                  {cloneElement(child, { focused: activeIndex === index })}
+                  <FocusProvider focused={index === activeIndex}>
+                    {child}
+                  </FocusProvider>
                 </Page>
               );
             })}
@@ -679,4 +693,24 @@ function usePager(): iPagerContext {
   return context;
 }
 
-export { Pager, PagerProvider, usePager, PagerContext };
+// provide hook for child screens to access pager focus:
+const FocusContext = React.createContext(false);
+
+interface iFocusProvider {
+  children: React.ReactNode;
+  focused: boolean;
+}
+
+function FocusProvider({ focused, children }: iFocusProvider) {
+  return (
+    <FocusContext.Provider value={focused}>{children}</FocusContext.Provider>
+  );
+}
+
+function useFocus() {
+  const focused = useContext(FocusContext);
+
+  return focused;
+}
+
+export { Pager, PagerProvider, usePager, PagerContext, useFocus };

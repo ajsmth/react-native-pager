@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, MutableRefObject } from 'react';
 import { ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { iPageInterpolation, SpringConfig } from './pager';
@@ -116,4 +116,22 @@ function runSpring(
   ]);
 }
 
-export { mapConfigToStyle, memoize, runSpring };
+// prevents layout bugs on multiply calls to an Animated.Value.setValue()
+// setValue() issue: https://github.com/kmagiera/react-native-reanimated/issues/216
+// it's not entirely foolproof, not exactly sure how this works to be honest,
+// but from the issue above it appears to happen only in debug mode anyways
+function safelyUpdateValues(
+  fn: Function,
+  ref: MutableRefObject<undefined | number>
+) {
+  if (ref.current) {
+    cancelAnimationFrame(ref.current);
+  }
+
+  ref.current = requestAnimationFrame(() => {
+    fn();
+    ref.current = undefined;
+  });
+}
+
+export { mapConfigToStyle, memoize, runSpring, safelyUpdateValues };

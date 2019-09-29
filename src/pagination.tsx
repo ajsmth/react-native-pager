@@ -1,8 +1,8 @@
-import React, { Children } from 'react';
+import React, { Children, useRef } from 'react';
 import Animated from 'react-native-reanimated';
 import { ViewStyle, LayoutChangeEvent } from 'react-native';
 import { iPageInterpolation, usePager } from './pager';
-import { memoize, mapConfigToStyle } from './util';
+import { memoize, mapConfigToStyle, safelyUpdateValues } from './util';
 
 const { sub, Value, divide, multiply, add } = Animated;
 
@@ -105,9 +105,12 @@ function Slider({
       : new Value(0);
 
   const width = memoize(new Value(0));
+  const request = useRef<undefined | number>(undefined);
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
-    width.setValue(layout.width as any);
+    safelyUpdateValues(() => {
+      width.setValue(layout.width as any);
+    }, request);
   }
 
   const sliderWidth = divide(width, numberOfScreens);
@@ -142,9 +145,12 @@ function Progress({
       : new Value(0);
 
   const width = memoize(new Value(0));
+  const request = useRef<undefined | number>(undefined);
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
-    width.setValue(layout.width as any);
+    safelyUpdateValues(() => {
+      width.setValue(layout.width as any);
+    }, request);
   }
 
   const sliderWidth = divide(
