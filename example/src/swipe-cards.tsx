@@ -55,7 +55,7 @@ function SwipeCards() {
         style={{height: 200, width: 200, alignSelf: 'center', padding: 10}}
         pageInterpolation={swipeCardsConfig}>
         {Array.from({length: activeIndex + 4}, (_, i) => (
-          <Slide key={i} i={i} />
+          <Slide key={i} />
         ))}
       </Pager>
       <NavigationButtons activeIndex={activeIndex} onChange={onChange} />

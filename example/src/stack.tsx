@@ -31,7 +31,7 @@ function Stack() {
           enabled: activeIndex !== 0,
         }}
         onChange={onChange}
-        clamp={{prev: 0.3}}
+        clamp={{prev: 0.4}}
         clampDrag={{next: 0}}
         adjacentChildOffset={4}
         style={{

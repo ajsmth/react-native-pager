@@ -1,4 +1,4 @@
-import { useRef, MutableRefObject } from 'react';
+import { useRef } from 'react';
 import { ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { iPageInterpolation, SpringConfig } from './pager';
@@ -17,7 +17,7 @@ const {
   block,
 } = Animated;
 
-function mapConfigToStyle(
+function interpolateWithConfig(
   offset: Animated.Node<number>,
   pageInterpolation?: iPageInterpolation
 ): ViewStyle {
@@ -30,7 +30,7 @@ function mapConfigToStyle(
 
     if (Array.isArray(currentStyle)) {
       const _style = currentStyle.map((interpolationConfig: any) =>
-        mapConfigToStyle(offset, interpolationConfig)
+        interpolateWithConfig(offset, interpolationConfig)
       );
 
       styles[key] = _style;
@@ -116,22 +116,4 @@ function runSpring(
   ]);
 }
 
-// prevents layout bugs on multiply calls to an Animated.Value.setValue()
-// setValue() issue: https://github.com/kmagiera/react-native-reanimated/issues/216
-// it's not entirely foolproof, not exactly sure how this works to be honest,
-// but from the issue above it appears to happen only in debug mode anyways
-function safelyUpdateValues(
-  fn: Function,
-  ref: MutableRefObject<undefined | number>
-) {
-  if (ref.current) {
-    cancelAnimationFrame(ref.current);
-  }
-
-  ref.current = requestAnimationFrame(() => {
-    fn();
-    ref.current = undefined;
-  });
-}
-
-export { mapConfigToStyle, memoize, runSpring, safelyUpdateValues };
+export { interpolateWithConfig, memoize, runSpring };

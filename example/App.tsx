@@ -29,13 +29,14 @@ const App = () => {
   }
 
   return (
-    <View style={{flex: 1, backgroundColor: 'white'}}>
-      <SafeAreaView style={{flex: 1, justifyContent: 'center'}}>
+    <SafeAreaView style={{flex: 1}}>
+      <View
+        style={{flex: 1, backgroundColor: 'white', justifyContent: 'center'}}>
         <PagerProvider activeIndex={activeIndex} onChange={onChange}>
           <MyPager />
         </PagerProvider>
-      </SafeAreaView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 

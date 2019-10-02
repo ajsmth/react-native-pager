@@ -1,12 +1,10 @@
 import React, {
   useState,
   Children,
-  useMemo,
   createContext,
   useContext,
   useEffect,
   memo,
-  useRef,
 } from 'react';
 import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -15,7 +13,7 @@ import {
   State,
   PanGestureHandlerProperties,
 } from 'react-native-gesture-handler';
-import { memoize, mapConfigToStyle, safelyUpdateValues } from './util';
+import { memoize, interpolateWithConfig } from './util';
 
 export type SpringConfig = {
   damping: Animated.Adaptable<number>;
@@ -61,6 +59,9 @@ export interface iPageInterpolation {
     | iInterpolationFn;
 }
 
+const VERTICAL = 1;
+const HORIZONTAL = 2;
+
 const {
   event,
   block,
@@ -69,6 +70,7 @@ const {
   cond,
   eq,
   add,
+  or,
   stopClock,
   Clock,
   set,
@@ -124,7 +126,6 @@ export interface iPager {
     next?: number;
   };
 }
-
 const REALLY_BIG_NUMBER = 1000000000;
 
 function Pager({
@@ -139,8 +140,8 @@ function Pager({
   minIndex = 0,
   maxIndex: parentMax,
   adjacentChildOffset = 10,
-  style,
   animatedValue,
+  style,
   type = 'horizontal',
   pageInterpolation,
   clamp = {
@@ -175,6 +176,7 @@ function Pager({
       : context
       ? context[3]
       : new Value(0);
+
   const animatedIndex = memoize(_animatedIndex);
 
   const [_activeIndex, _onChange] = useState(initialIndex);
@@ -206,14 +208,12 @@ function Pager({
       ? Math.ceil((numberOfScreens - 1) / pageSize)
       : parentMax;
 
-  // set this up on first render, and update when the value from above changes
   const maxIndex = memoize(new Value(maxIndexValue));
 
-  const maxIndexUpdateReq = useRef<undefined | number>(undefined);
   useEffect(() => {
-    safelyUpdateValues(() => {
+    requestAnimationFrame(() => {
       maxIndex.setValue(maxIndexValue);
-    }, maxIndexUpdateReq);
+    });
   }, [maxIndexValue]);
 
   const dragX = memoize(new Value(0));
@@ -249,38 +249,37 @@ function Pager({
     )
   );
 
-  // these dimensions are used to compute the layout of child screens
-  // they are also used to determine the behaviour of the pager for things like
-  // drag threshold, and how large an individual page might be
-  const width = memoize(new Value(0));
-  const height = memoize(new Value(0));
-
-  const layoutRequest = useRef<undefined | number>(undefined);
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
+  const dimension = memoize(new Value(0));
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
-    safelyUpdateValues(() => {
-      width.setValue(layout.width as any);
-      height.setValue(layout.height as any);
-
-      // this sets the initial offset to the correct translation w/o animation
-      // e.g an initial index of 4 will be centered when layout registers
-      translationValue.setValue((activeIndex *
-        layout[targetDimension] *
-        -1) as any);
-    }, layoutRequest);
+    layout.width !== width && setWidth(layout.width);
+    layout.height !== height && setHeight(layout.height);
   }
 
-  // correctly assign variables based on vertical / horizontal configurations
+  const TYPE = type === 'vertical' ? VERTICAL : HORIZONTAL;
+
+  Animated.useCode(
+    cond(
+      // dimension already set to last layout
+      or(eq(dimension, width), eq(dimension, height)),
+      [],
+      [
+        cond(eq(TYPE, VERTICAL), set(dimension, height), set(dimension, width)),
+        set(translationValue, multiply(activeIndex, dimension, -1)),
+      ]
+    ),
+    [width, height]
+  );
+
+  // assign variables based on vertical / horizontal configurations
   const targetDimension = type === 'vertical' ? 'height' : 'width';
-  const dimension = type === 'vertical' ? height : width;
   const translateValue = type === 'vertical' ? 'translateY' : 'translateX';
   const dragValue = type === 'vertical' ? dragY : dragX;
 
   // compute the total size of a page to determine how far to snap
-  const page = useMemo(() => multiply(dimension, pageSize), [
-    dimension,
-    pageSize,
-  ]);
+  const page = memoize(multiply(dimension, pageSize));
 
   // only need one clock
   const clock = memoize(new Clock());
@@ -313,6 +312,8 @@ function Pager({
             neq(config.toValue, nextPosition),
             set(config.toValue, nextPosition)
           ),
+
+          set(animatedIndex, divide(state.position, max(dimension, 1), -1)),
         ],
         [
           set(state.position, translationValue),
@@ -325,8 +326,6 @@ function Pager({
       ),
       spring(clock, state, config),
       cond(state.finished, [stopClock(clock), set(state.time, 0)]),
-      // keep the animatedIndex value in sync with any changes to position
-      set(animatedIndex, divide(state.position, max(dimension, 1), -1)),
       state.position,
     ]);
   });
@@ -340,7 +339,7 @@ function Pager({
 
   // position is a different name for the current index registered with the <Pager />
   // it does not necessarily reflect the activeIndex in all states
-  const position = memoize(new Value(initialIndex));
+  const position = memoize(new Value(activeIndex));
 
   // `nextPosition` is computed every frame (could be optimized probably)
   // and the value is used on release to snap to a given index offset
@@ -348,18 +347,15 @@ function Pager({
   // if the activeIndex prop changes
   const nextPosition = memoize(new Value(0));
 
-  // not sure if Animated.useCode is any better here, it seemed to fire much more
-  // frequently than activeIndex was actually changing.
-
-  const indexChangeRequest = useRef<undefined | number>(undefined);
-
+  // Animated.useCode doesn't seem to fire in time to update the nextPosition
+  // value to trigger transitions, not sure why but this works for now
   useEffect(() => {
     if (activeIndex >= minIndex && activeIndex <= maxIndexValue) {
-      safelyUpdateValues(() => {
+      requestAnimationFrame(() => {
         nextPosition.setValue(activeIndex);
-      }, indexChangeRequest);
+      });
     }
-  }, [activeIndex, nextPosition]);
+  }, [activeIndex, maxIndexValue, minIndex]);
 
   // compute the next snap point - it could be multiply screens depending
   // on how far the user has dragged and what pageSize value is
@@ -443,6 +439,7 @@ function Pager({
           ]),
           set(swiping, 0),
           set(translationValue, runSpring(position)),
+          translationValue,
         ]
       ),
     ])
@@ -498,54 +495,58 @@ function Pager({
 
   return (
     <Animated.View style={style || { flex: 1 }} onLayout={handleLayout}>
-      <PanGestureHandler
-        {...panProps}
-        onGestureEvent={handleGesture}
-        onHandlerStateChange={handleStateChange}
-      >
-        <Animated.View style={{ flex: 1 }}>
-          <Animated.View
-            style={{
-              ...StyleSheet.absoluteFillObject,
-              [targetDimension]: totalDimension,
-              transform: [{ [translateValue]: translation }],
-            }}
-          >
-            {adjacentChildren.map((child: any, i) => {
-              // use map instead of React.Children because we want to track
-              // the keys of these children by there index
-              // React.Children shifts these key values intelligently, but it
-              // causes issues with the memoized values in <Page /> components
-              let index = i;
+      {width === 0 ? null : (
+        <PanGestureHandler
+          {...panProps}
+          onGestureEvent={handleGesture}
+          onHandlerStateChange={handleStateChange}
+        >
+          <Animated.View style={{ flex: 1 }}>
+            <Animated.View
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                [targetDimension]: totalDimension,
+                transform: [{ [translateValue]: translation }],
+              }}
+            >
+              {adjacentChildren.map((child: any, i) => {
+                // use map instead of React.Children because we want to track
+                // the keys of these children by there index
+                // React.Children shifts these key values intelligently, but it
+                // causes issues with the memoized values in <Page /> components
+                let index = i;
 
-              if (adjacentChildOffset !== undefined) {
-                index =
-                  activeIndex <= adjacentChildOffset
-                    ? i
-                    : activeIndex - adjacentChildOffset + i;
-              }
+                if (adjacentChildOffset !== undefined) {
+                  index =
+                    activeIndex <= adjacentChildOffset
+                      ? i
+                      : activeIndex - adjacentChildOffset + i;
+                }
 
-              return (
-                <Page
-                  key={index}
-                  index={index}
-                  dimension={dimension}
-                  translation={translation}
-                  targetDimension={targetDimension}
-                  translateValue={translateValue}
-                  clampPrev={clampPrev}
-                  clampNext={clampNext}
-                  pageInterpolation={pageInterpolation}
-                >
-                  <FocusProvider focused={index === activeIndex}>
-                    {child}
-                  </FocusProvider>
-                </Page>
-              );
-            })}
+                return (
+                  <Page
+                    key={index}
+                    index={index}
+                    dimension={dimension}
+                    translation={translation}
+                    targetDimension={targetDimension}
+                    translateValue={translateValue}
+                    clampPrev={clampPrev}
+                    clampNext={clampNext}
+                    pageInterpolation={pageInterpolation}
+                  >
+                    <IndexProvider index={index}>
+                      <FocusProvider focused={index === activeIndex}>
+                        {child}
+                      </FocusProvider>
+                    </IndexProvider>
+                  </Page>
+                );
+              })}
+            </Animated.View>
           </Animated.View>
-        </Animated.View>
-      </PanGestureHandler>
+        </PanGestureHandler>
+      )}
     </Animated.View>
   );
 }
@@ -594,7 +595,7 @@ function _Page({
 
   // apply interpolation configs to <Page />
   const interpolatedStyles = memoize(
-    mapConfigToStyle(offset, pageInterpolation)
+    interpolateWithConfig(offset, pageInterpolation)
   );
 
   // take out zIndex here as it needs to be applied to siblings, which inner containers
@@ -668,7 +669,7 @@ function PagerProvider({
   const onChange = isControlled ? parentOnChange : _setActiveIndex;
 
   const animatedValue = memoize(new Value(0));
-  const animatedIndex = memoize(new Value(0));
+  const animatedIndex = memoize(new Value(activeIndex));
 
   return (
     <PagerContext.Provider
@@ -713,4 +714,60 @@ function useFocus() {
   return focused;
 }
 
-export { Pager, PagerProvider, usePager, PagerContext, useFocus };
+const IndexContext = React.createContext<undefined | number>(undefined);
+
+interface iIndexProvider {
+  children: React.ReactNode;
+  index: number;
+}
+
+function IndexProvider({ children, index }: iIndexProvider) {
+  return (
+    <IndexContext.Provider value={index}>{children}</IndexContext.Provider>
+  );
+}
+
+function useIndex() {
+  const index = useContext(IndexContext);
+
+  if (index === undefined) {
+    throw new Error(`useIndex() must be used within an <IndexProvider />`);
+  }
+
+  return index;
+}
+
+function useOnFocus(fn: Function) {
+  const focused = useFocus();
+
+  useEffect(() => {
+    if (focused) {
+      fn();
+    }
+  }, [focused]);
+}
+
+function useAnimatedIndex() {
+  const pager = usePager();
+  return pager[3];
+}
+
+function useAnimatedOffset(index: number) {
+  const pager = usePager();
+  const animatedIndex = pager[3];
+  const offset = memoize(sub(index, animatedIndex));
+
+  return offset;
+}
+
+export {
+  Pager,
+  PagerProvider,
+  PagerContext,
+  usePager,
+  useFocus,
+  useAnimatedOffset,
+  useOnFocus,
+  useIndex,
+  useAnimatedIndex,
+};

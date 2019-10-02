@@ -32,7 +32,7 @@ function StackedCards() {
         style={{height: 200, width: 200, alignSelf: 'center', padding: 10}}
         pageInterpolation={stackedCardsConfig}>
         {Array.from({length: activeIndex + 3}, (_, i) => (
-          <Slide key={i} i={i} />
+          <Slide key={i} />
         ))}
       </Pager>
       <NavigationButtons activeIndex={activeIndex} onChange={onChange} />

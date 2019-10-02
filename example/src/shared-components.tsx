@@ -7,7 +7,14 @@ import {
   TextInput,
   Button,
 } from 'react-native';
-import {useFocus} from '@crowdlinker/react-native-pager';
+import {
+  useFocus,
+  useOnFocus,
+  useAnimatedOffset,
+  interpolateWithConfig,
+  useIndex,
+} from '@crowdlinker/react-native-pager';
+import Animated from 'react-native-reanimated';
 
 const colors = [
   'aquamarine',
@@ -20,26 +27,39 @@ const colors = [
   'salmon',
 ];
 
-function Slide({i}: {i: number}) {
+function Slide() {
   // const [count, setCount] = useState(0);
   const focused = useFocus();
+  const index = useIndex();
+  // const offset = useAnimatedOffset(index);
+
+  // const style = interpolateWithConfig(offset, {
+  //   transform: [
+  //     {
+  //       scale: {
+  //         inputRange: [-1, 0, 1],
+  //         outputRange: [0.9, 1, 0.9],
+  //       },
+  //     },
+  //   ],
+  // });
 
   return (
-    <View
+    <Animated.View
       style={{
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 10,
         marginHorizontal: 5,
-        backgroundColor: colors[i % colors.length],
+        backgroundColor: colors[index % colors.length],
       }}>
-      <Text>{`Screen: ${i}`}</Text>
+      <Text>{`Screen: ${index}`}</Text>
       <Text>{`Focused: ${focused}`}</Text>
       {/* <TextInput placeholder="Test Update" />
       <Text>{`Count: ${count}`}</Text>
       <Button title="Inc" onPress={() => setCount(count + 1)} /> */}
-    </View>
+    </Animated.View>
   );
 }
 
