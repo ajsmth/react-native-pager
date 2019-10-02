@@ -320,6 +320,8 @@ function Pager({
             neq(config.toValue, nextPosition),
             set(config.toValue, nextPosition)
           ),
+
+          set(animatedIndex, divide(state.position, max(dimension, 1), -1)),
         ],
         [
           set(state.position, translationValue),
@@ -443,7 +445,6 @@ function Pager({
           ]),
           set(swiping, 0),
           set(translationValue, runSpring(position)),
-          set(animatedIndex, divide(translationValue, max(dimension, 1), -1)),
           translationValue,
         ]
       ),
