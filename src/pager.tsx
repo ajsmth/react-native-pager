@@ -211,7 +211,9 @@ function Pager({
   const maxIndex = memoize(new Value(maxIndexValue));
 
   useEffect(() => {
-    maxIndex.setValue(maxIndexValue);
+    requestAnimationFrame(() => {
+      maxIndex.setValue(maxIndexValue);
+    });
   }, [maxIndexValue]);
 
   const dragX = memoize(new Value(0));
@@ -349,7 +351,9 @@ function Pager({
   // value to trigger transitions, not sure why but this works for now
   useEffect(() => {
     if (activeIndex >= minIndex && activeIndex <= maxIndexValue) {
-      nextPosition.setValue(activeIndex);
+      requestAnimationFrame(() => {
+        nextPosition.setValue(activeIndex);
+      });
     }
   }, [activeIndex, maxIndexValue, minIndex]);
 
@@ -726,7 +730,7 @@ function IndexProvider({ children, index }: iIndexProvider) {
 function useIndex() {
   const index = useContext(IndexContext);
 
-  if (!index) {
+  if (index === undefined) {
     throw new Error(`useIndex() must be used within an <IndexProvider />`);
   }
 

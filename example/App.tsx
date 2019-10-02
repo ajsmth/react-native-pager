@@ -33,7 +33,7 @@ const App = () => {
       <View
         style={{flex: 1, backgroundColor: 'white', justifyContent: 'center'}}>
         <PagerProvider activeIndex={activeIndex} onChange={onChange}>
-          <Tabs />
+          <MyPager />
         </PagerProvider>
       </View>
     </SafeAreaView>

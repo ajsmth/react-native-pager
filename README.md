@@ -178,15 +178,17 @@ function NavigationButtons({ activeIndex, onChange }) {
 
 ## Pager
 
+This interface looks intimidating, but nearly all of these props are optional to customize specific behaviours and won't be necessary in a lot of use cases.
+
 ```typescript
 import { Pager } from '@crowdlinker/react-native-pager'
 
 Props
 --------
+children: React.ReactNode[];
 activeIndex?: number; - active screen
 onChange?: (nextIndex: number) => void; - active screen changed
 initialIndex?: number; - initial active screen
-children: React.ReactNode[];
 springConfig?: Partial<SpringConfig> - configuration for spring transitions on swipe / snap
 pageInterpolation?: ViewStyle - see below - configuration for individual page transforms
 panProps?: Partial<GestureHandlerProperties> - configuration for <PanGestureHandler />
@@ -217,7 +219,6 @@ import { Pagination } from '@crowdlinker/react-native-pager'
 Props
 --------
 children: React.ReactNode;
-animatedIndex?: Animated.Value<number>;
 pageInterpolation: iPageInterpolation;
 style?: ViewStyle;
 ```
@@ -230,7 +231,6 @@ import { Slider } from '@crowdlinker/react-native-pager'
 Props
 --------
 numberOfScreens: number;
-animatedIndex?: Animated.Value<number>;
 style: ViewStyle;
 ```
 
@@ -242,7 +242,6 @@ import { Progress } from '@crowdlinker/react-native-pager'
 Props
 --------
 numberOfScreens: number;
-animatedIndex?: Animated.Value<number>;
 style: ViewStyle;
 ```
 
@@ -566,5 +565,53 @@ function Controls() {
       <Button title="Decrement" onPress={() => onChange(activeIndex - 1)} />
     </View>
   );
+}
+```
+
+## Hooks
+
+There are a number of useful hooks you can use to access values from the Pager:
+
+```typescript
+  usePager(): [activeIndex, onChange, translationValue, animatedIndex]
+  useFocus(): boolean -> is screen focused
+  useAnimatedOffset(index: number) -> animatedIndex relative to index e.g -2, -1, 0, 1, 2, etc
+  useOnFocus(fn) -> fn() to fire on screen focus
+  useIndex() -> the index of the screen
+  useAnimatedIndex() -> the animatedIndex value of the pager
+```
+
+### What is animatedIndex?
+
+Animated index represents the animated value of the active index -- it includes possible intermediate values.
+When panning or transitioning, the activeIndex value moves from 0 -> 1 but the animatedIndex value captures all intermediate values between 0 and 1 during this transition
+
+## Functions
+
+```typescript
+  interpolateWithConfig(offset: Animated.Node<number>, pageInterpolation: iPageInterpolation) -> ViewStyle
+```
+
+This function can be used in your components to provide style transforms for a given animated node, for example using the useAnimatedOffset(index) to interpolate specific opacity or scale styles based on your components relative position to the active index
+
+e.g:
+
+```javascript
+function MySlide() {
+  const index = useIndex();
+  const offset = useAnimatedOffset(index);
+
+  const style = interpolateWithConfig(offset, {
+    transform: [
+      {
+        scale: {
+          inputRange: [-1, 0, 1],
+          outputRange: [0.9, 1, 0.9],
+        },
+      },
+    ],
+  });
+
+  return <Animated.View style={{ flex: 1, ...style }}>...</Animated.View>;
 }
 ```
