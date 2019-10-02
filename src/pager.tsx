@@ -6,14 +6,14 @@ import React, {
   useEffect,
   memo,
 } from 'react';
-import { StyleSheet, LayoutChangeEvent, ViewStyle, View } from 'react-native';
-import Animated, { Easing } from 'react-native-reanimated';
+import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
+import Animated from 'react-native-reanimated';
 import {
   PanGestureHandler,
   State,
   PanGestureHandlerProperties,
 } from 'react-native-gesture-handler';
-import { memoize, mapConfigToStyle, safelyUpdateValues } from './util';
+import { memoize, interpolateWithConfig } from './util';
 
 export type SpringConfig = {
   damping: Animated.Adaptable<number>;
@@ -87,19 +87,9 @@ const {
   abs,
   lessThan,
   ceil,
-  proc,
-  timing,
-  and,
-  lessOrEq,
-  greaterOrEq,
   // @ts-ignore
   debug,
 } = Animated;
-
-const TIMING_CONFIG = {
-  duration: 200,
-  easing: Easing.out(Easing.cubic),
-};
 
 const DEFAULT_SPRING_CONFIG = {
   stiffness: 1000,
@@ -355,8 +345,8 @@ function Pager({
   // if the activeIndex prop changes
   const nextPosition = memoize(new Value(0));
 
-  // not sure if Animated.useCode is any better here, it seemed to fire much more
-  // frequently than activeIndex was actually changing.
+  // Animated.useCode doesn't seem to fire in time to update the nextPosition
+  // value to trigger transitions, not sure why but this works for now
   useEffect(() => {
     if (activeIndex >= minIndex && activeIndex <= maxIndexValue) {
       nextPosition.setValue(activeIndex);
@@ -541,9 +531,11 @@ function Pager({
                     clampNext={clampNext}
                     pageInterpolation={pageInterpolation}
                   >
-                    <FocusProvider focused={index === activeIndex}>
-                      {child}
-                    </FocusProvider>
+                    <IndexProvider index={index}>
+                      <FocusProvider focused={index === activeIndex}>
+                        {child}
+                      </FocusProvider>
+                    </IndexProvider>
                   </Page>
                 );
               })}
@@ -599,7 +591,7 @@ function _Page({
 
   // apply interpolation configs to <Page />
   const interpolatedStyles = memoize(
-    mapConfigToStyle(offset, pageInterpolation)
+    interpolateWithConfig(offset, pageInterpolation)
   );
 
   // take out zIndex here as it needs to be applied to siblings, which inner containers
@@ -718,8 +710,60 @@ function useFocus() {
   return focused;
 }
 
-const minMax = proc((value, minimum, maximum) =>
-  min(max(value, minimum), maximum)
-);
+const IndexContext = React.createContext<undefined | number>(undefined);
 
-export { Pager, PagerProvider, usePager, PagerContext, useFocus };
+interface iIndexProvider {
+  children: React.ReactNode;
+  index: number;
+}
+
+function IndexProvider({ children, index }: iIndexProvider) {
+  return (
+    <IndexContext.Provider value={index}>{children}</IndexContext.Provider>
+  );
+}
+
+function useIndex() {
+  const index = useContext(IndexContext);
+
+  if (!index) {
+    throw new Error(`useIndex() must be used within an <IndexProvider />`);
+  }
+
+  return index;
+}
+
+function useOnFocus(fn: Function) {
+  const focused = useFocus();
+
+  useEffect(() => {
+    if (focused) {
+      fn();
+    }
+  }, [focused]);
+}
+
+function useAnimatedIndex() {
+  const pager = usePager();
+  return pager[3];
+}
+
+function useAnimatedOffset(index: number) {
+  const pager = usePager();
+  const animatedIndex = pager[3];
+  const offset = memoize(sub(index, animatedIndex));
+
+  return offset;
+}
+
+export {
+  Pager,
+  PagerProvider,
+  PagerContext,
+  usePager,
+  useFocus,
+  useAnimatedOffset,
+  useOnFocus,
+  useIndex,
+  useAnimatedIndex,
+};

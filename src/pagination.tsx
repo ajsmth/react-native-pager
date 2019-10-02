@@ -1,14 +1,17 @@
-import React, { Children, useRef } from 'react';
+import React, { Children } from 'react';
 import Animated from 'react-native-reanimated';
-import { ViewStyle, LayoutChangeEvent, View } from 'react-native';
-import { iPageInterpolation, usePager } from './pager';
-import { memoize, mapConfigToStyle, safelyUpdateValues } from './util';
+import { ViewStyle, LayoutChangeEvent } from 'react-native';
+import {
+  iPageInterpolation,
+  useAnimatedOffset,
+  useAnimatedIndex,
+} from './pager';
+import { memoize, interpolateWithConfig } from './util';
 
-const { sub, Value, divide, multiply, add, block, debug } = Animated;
+const { Value, divide, multiply, add } = Animated;
 
 interface iPagination {
   children: React.ReactNode;
-  animatedIndex?: Animated.Value<number>;
   pageInterpolation: iPageInterpolation;
   style?: ViewStyle;
 }
@@ -19,21 +22,7 @@ const DEFAULT_PAGINATION_STYLE: ViewStyle = {
   flexDirection: 'row',
 };
 
-function Pagination({
-  children,
-  animatedIndex: parentAnimatedIndex,
-  pageInterpolation,
-  style,
-}: iPagination) {
-  const context = usePager();
-
-  const animatedIndex =
-    parentAnimatedIndex !== undefined
-      ? parentAnimatedIndex
-      : context !== undefined
-      ? context[3]
-      : new Value(0);
-
+function Pagination({ children, pageInterpolation, style }: iPagination) {
   return (
     <Animated.View
       style={{
@@ -43,7 +32,6 @@ function Pagination({
     >
       {Children.map(children, (child: any, index) => (
         <PaginationItem
-          animatedIndex={animatedIndex}
           index={index}
           pageInterpolation={pageInterpolation}
           style={child.props.style}
@@ -57,7 +45,6 @@ function Pagination({
 
 interface iPaginationItem {
   children: React.ReactNode;
-  animatedIndex: Animated.Value<number>;
   pageInterpolation: iPageInterpolation;
   index: number;
   style?: ViewStyle;
@@ -65,13 +52,14 @@ interface iPaginationItem {
 
 function PaginationItem({
   children,
-  animatedIndex,
   pageInterpolation,
   index,
   style,
 }: iPaginationItem) {
-  const offset = memoize(sub(index, animatedIndex));
-  const configStyles = memoize(mapConfigToStyle(offset, pageInterpolation));
+  const offset = useAnimatedOffset(index);
+  const configStyles = memoize(
+    interpolateWithConfig(offset, pageInterpolation)
+  );
 
   return (
     <Animated.View style={[style || { flex: 1 }, configStyles]}>
@@ -91,20 +79,8 @@ const DEFAULT_SLIDER_STYLE = {
   backgroundColor: 'aquamarine',
 };
 
-function Slider({
-  numberOfScreens,
-  animatedIndex: parentAnimatedIndex,
-  style,
-}: iSlider) {
-  const context = usePager();
-
-  const animatedIndex =
-    parentAnimatedIndex !== undefined
-      ? parentAnimatedIndex
-      : context !== undefined
-      ? context[3]
-      : new Value(0);
-
+function Slider({ numberOfScreens, style }: iSlider) {
+  const animatedIndex = useAnimatedIndex();
   const width = memoize(new Value(0));
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
@@ -128,19 +104,8 @@ function Slider({
   );
 }
 
-function Progress({
-  numberOfScreens,
-  animatedIndex: parentAnimatedIndex,
-  style,
-}: iSlider) {
-  const context = usePager();
-
-  const animatedIndex =
-    parentAnimatedIndex !== undefined
-      ? parentAnimatedIndex
-      : context !== undefined
-      ? context[3]
-      : new Value(0);
+function Progress({ numberOfScreens, style }: iSlider) {
+  const animatedIndex = useAnimatedIndex();
 
   const width = memoize(new Value(0));
 
@@ -153,7 +118,7 @@ function Progress({
   );
 
   return (
-    <View onLayout={handleLayout}>
+    <Animated.View onLayout={handleLayout}>
       <Animated.View
         style={{
           width: sliderWidth,
@@ -163,7 +128,7 @@ function Progress({
           ...style,
         }}
       />
-    </View>
+    </Animated.View>
   );
 }
 
