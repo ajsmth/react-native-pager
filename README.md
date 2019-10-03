@@ -1,10 +1,10 @@
 # react-native-pager
 
-Fully controllable, high performance pager component w/ gesture support for React Native
+A fully controllable, high performance pager for React Native
 
 <p align="center" style="display: flex; justify-content: center; align-items:center;">
-  <img src="docs/assets/inline-cards.gif" width="300px"  style="margin: 0 10px"/>
-  <img src="docs/assets/paginated-tabs.gif" width="300px" style="margin: 0 10px"/> 
+  <img src="docs/assets/kilter-cards.gif" width="300px"  style="margin: 0 10px"/>
+  <img src="docs/assets/tabs-example.gif" width="300px" style="margin: 0 10px"/> 
 </p>
 
 # Installation
@@ -23,153 +23,28 @@ There are additional steps to setting these up:
 - [react-native-gesture-handler](https://kmagiera.github.io/react-native-gesture-handler/docs/getting-started.html)
 - [react-native-reanimated](https://github.com/kmagiera/react-native-reanimated#installation)
 
-# Examples
-
-<p align="center">
-These examples were inspired by the docs of the awesome [react-native-snap-carousel library](https://github.com/archriss/react-native-snap-carousel)
-</p>
-
-<p align="center" style="display: flex; justify-content: center; align-items:center; flex-wrap: wrap;">
-  <img src="docs/assets/kilter-cards.gif" width="300px" style="margin: 0 10px" />
-  <img src="docs/assets/swipe-cards.gif" width="300px" style="margin: 0 10px" />
-</p>
-
-<p align="center" style="display: flex; justify-content: center; align-items:center; flex-wrap: wrap;">
-  <img src="docs/assets/stacked-cards.gif" width="300px" style="margin: 0 10px" />
-  <img src="docs/assets/inline-cards.gif" width="300px" style="margin: 0 10px" />
-</p>
-
-### Basic Pager
+# Example
 
 ```javascript
-<Pager initialIndex={2}>
-  <Screen />
-  <Screen />
-  <Screen />
-  <Screen />
-  <Screen />
-</Pager>
-```
+// lots more examples are available in example/src directory of this repo
 
-### Controlled Pager
-
-From App.js in /example directory
-
-```javascript
-// App.js
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-
-import { Pager, useFocus } from '@crowdlinker/react-native-pager';
-
-const children = Array.from({ length: 1000 }, (_, i) => (
-  <Slide key={i} i={i} />
-));
+import { View } from 'react-native';
+import { Pager, PagerProvider } from '@crowdlinker/react-native-pager';
+import { Slide } from './shared-components';
 
 function MyPager() {
-  const [activeIndex, onChange] = useState(400);
+  const [activeIndex, onChange] = useState(1);
 
   return (
-    <View>
-      <Pager
-        activeIndex={activeIndex}
-        onChange={onChange}
-        style={{
-          height: 200,
-          width: 200,
-          alignSelf: 'center',
-        }}
-      >
-        {children}
+    <PagerProvider activeIndex={activeIndex} onChange={onChange}>
+      <Pager>
+        <Slide />
+        <Slide />
+        <Slide />
+        <Slide />
       </Pager>
-      <NavigationButtons activeIndex={activeIndex} onChange={onChange} />
-    </View>
-  );
-}
-
-const colors = [
-  'aquamarine',
-  'coral',
-  'gold',
-  'cadetblue',
-  'crimson',
-  'darkorange',
-  'darkmagenta',
-  'salmon',
-];
-
-function Slide({ i }: { i: number }) {
-  const focused = useFocus();
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 10,
-        marginHorizontal: 5,
-        backgroundColor: colors[i % colors.length],
-      }}
-    >
-      <Text>{`Screen: ${i}`}</Text>
-      <Text>{`Focused: ${focused}`}</Text>
-    </View>
-  );
-}
-
-function NavigationButtons({ activeIndex, onChange }) {
-  return (
-    <View
-      style={{
-        height: 75,
-        width: '100%',
-        backgroundColor: 'white',
-        marginTop: 10,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 16,
-          height: 25,
-          textAlign: 'center',
-        }}
-      >{`activeIndex: ${activeIndex}`}</Text>
-
-      <View
-        style={{
-          flex: 1,
-          flexDirection: 'row',
-          justifyContent: 'space-around',
-          marginTop: 10,
-        }}
-      >
-        <TouchableOpacity
-          style={{
-            borderWidth: StyleSheet.hairlineWidth,
-            borderRadius: 4,
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 150,
-          }}
-          onPress={() => onChange(activeIndex - 1)}
-        >
-          <Text>{`<`}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={{
-            borderWidth: StyleSheet.hairlineWidth,
-            borderRadius: 4,
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 150,
-          }}
-          onPress={() => onChange(activeIndex + 1)}
-        >
-          <Text>{`>`}</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </PagerProvider>
   );
 }
 ```
@@ -177,8 +52,6 @@ function NavigationButtons({ activeIndex, onChange }) {
 # API Reference
 
 ## Pager
-
-This interface looks intimidating, but nearly all of these props are optional to customize specific behaviours and won't be necessary in a lot of use cases.
 
 ```typescript
 import { Pager } from '@crowdlinker/react-native-pager'
@@ -190,7 +63,7 @@ activeIndex?: number; - active screen
 onChange?: (nextIndex: number) => void; - active screen changed
 initialIndex?: number; - initial active screen
 springConfig?: Partial<SpringConfig> - configuration for spring transitions on swipe / snap
-pageInterpolation?: ViewStyle - see below - configuration for individual page transforms
+pageInterpolation?: iPageInterpolation - see below - configuration for individual page transforms
 panProps?: Partial<GestureHandlerProperties> - configuration for <PanGestureHandler />
 pageSize?: number; - percentage (0 - 1), how far should it page on index change
 threshold?: number; - percentage (0 - 1), how far should the user drag before snapping to next / prev
@@ -209,6 +82,21 @@ clampDrag: {
   prev?: number - max drag distance to previous screen,
   next?: number - max drag distance to next screen
 }
+```
+
+This interface looks intimidating, but nearly all of these props are optional and customize specific behaviours. They won't be necessary in a lot of use cases.
+
+## PagerProvider
+
+```typescript
+import { PagerProvider } from '@crowdlinker/react-native-pager'
+
+Props
+--------
+children: React.ReactNode;
+initialIndex?: number;
+activeIndex?: number;
+onChange?: (nextIndex: number) => void;
 ```
 
 ## Pagination
@@ -245,368 +133,51 @@ numberOfScreens: number;
 style: ViewStyle;
 ```
 
-## PagerProvider
+# Hooks
 
-```typescript
-import { PagerProvider } from '@crowdlinker/react-native-pager'
-
-Props
---------
-children: React.ReactNode;
-initialIndex?: number;
-activeIndex?: number;
-onChange?: (nextIndex: number) => void;
-```
-
-## Tabs and Stack
-
-Tab and Stack configurations are pretty straightforward to get setup:
-
-<p align="center">
-  <img src="docs/assets/stack-config.gif" />
-</p>
-
-```javascript
-const stackInterpolation = {
-  zIndex: offset => offset,
-
-  transform: [
-    {
-      scale: {
-        inputRange: [-1, 0, 1],
-        outputRange: [0.95, 1, 0.95],
-      },
-    },
-  ],
-};
-
-function Stack({ children }) {
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  return (
-    <View style={{ flex: 1, borderWidth: StyleSheet.hairlineWidth }}>
-      <Pager
-        pageInterpolation={stackInterpolation}
-        activeIndex={activeIndex}
-        onChange={setActiveIndex}
-        clamp={{ prev: 0.3 }}
-        clampDrag={{ next: 0 }}
-        style={{ flex: 1, overflow: 'hidden', paddingVertical: 5 }}
-      >
-        {children}
-      </Pager>
-
-      <View style={{ height: 50, flexDirection: 'row' }}>
-        <TouchableOpacity
-          onPress={() =>
-            setActiveIndex(Math.min(activeIndex + 1, children.length - 1))
-          }
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderWidth: 1,
-            borderColor: colors[activeIndex],
-          }}
-        >
-          <Text style={{ color: colors[activeIndex] }}>Push</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-```
-
-<p align="center">
-  <img src="docs/assets/tabs-config.gif" />
-</p>
-
-```javascript
-function Tabs({ children }) {
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  return (
-    <View style={{ flex: 1, borderWidth: StyleSheet.hairlineWidth }}>
-      <Pager
-        activeIndex={activeIndex}
-        onChange={setActiveIndex}
-        style={{ flex: 1, overflow: 'hidden', paddingVertical: 5 }}
-      >
-        {children}
-      </Pager>
-
-      <View style={{ height: 50, flexDirection: 'row' }}>
-        {React.Children.map(children, (c, i) => (
-          <TouchableOpacity
-            onPress={() => setActiveIndex(i)}
-            style={{
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderWidth: 1,
-              borderColor: activeIndex === i ? colors[i] : 'black',
-            }}
-          >
-            <Text style={{ color: activeIndex === i ? colors[i] : 'black' }}>
-              {i + 1}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-}
-```
-
-## Customization
-
-The default settings for the pager component will be a full screen page that handles horizontal swipes.
-
-You can customize the behaviour of individual cards using the `pageInterpolation` prop. It accepts an object of interpolation configurations for the different properties you want to transform. The interpolation configs can be found in the [`react-native-reanimated` docs here](https://github.com/kmagiera/react-native-reanimated#interpolate).
-
-There's some pretty neat stuff you can do with these -- here are some examples for the configs above:
-
-<p align="center">
-  <img src="docs/assets/kilter-cards.gif" />
-</p>
-
-```javascript
-// the numbers we are interpolating are relative to the active card
-// e.g an inputRange value of -1 means it is 1 page to the left of whatever is active.
-
-const kilterCards = {
-  transform: [
-    {
-      scale: {
-        inputRange: [-1, 0, 1],
-        outputRange: [0.95, 1, 0.95],
-      },
-    },
-
-    {
-      translateY: {
-        inputRange: [-1, 0, 1, 2],
-        outputRange: [0, 0, 10, -15],
-      },
-    },
-
-    {
-      rotate: {
-        unit: 'deg',
-        inputRange: [-1, 0, 1, 2],
-        outputRange: [-20, 0, -7.5, 5],
-      },
-    },
-  ],
-
-  opacity: {
-    inputRange: [-1, 0, 1, 2, 3],
-    outputRange: [0, 1, 1, 1, 0],
-  },
-};
-
-<Pager clamp={{ next: 0 }} pageInterpolation={kilterCards}>
-  ...
-</Pager>;
-```
-
-<p align="center">
-  <img src="docs/assets/swipe-cards.gif" />
-</p>
-
-```javascript
-const swipeCards = {
-  transform: [
-    {
-      scale: {
-        inputRange: [-1, 0, 1],
-        outputRange: [0.95, 1, 0.95],
-        clamp: Extrapolate.EXTEND,
-      },
-    },
-    {
-      translateX: {
-        inputRange: [-1, 0, 1],
-        outputRange: [-150, 0, 0],
-      },
-    },
-    {
-      // you can pass a function as a transformer -- offset in this case will represent
-      // the distance a screen is from the active screen
-      // e.g -1 means 1 to the left, 4 means 4 to the right
-      // this will move cards downwards as they get further away from the activeIndex
-      translateY: (offset: Animated.Value<number>) =>
-        Animated.multiply(offset, 10),
-    },
-    {
-      rotate: {
-        unit: 'deg',
-        inputRange: [-1, 0, 1],
-        outputRange: [-20, 0, 0],
-        clamp: Extrapolate.EXTEND,
-      },
-    },
-  ],
-
-  // any Animated function can be used in these
-  zIndex: offset => floor(divide(offset, -1)),
-};
-
-<Pager clamp={{ next: 0 }} pageInterpolation={swipeCards}>
-  ...
-</Pager>;
-```
-
-## Pagination
-
-<p align="center">
-  <img src="docs/assets/paginated-tabs.gif" />
-</p>
-
-There's a few components to display the current active active. These require an `animatedIndex` prop that you can pass into the active pager component and share with these components:
-
-```javascript
-
-const animatedIndex = new Value(0)
-
-function MyPager({ children }) {
-  <View>
-    <Pager animatedIndex={animatedIndex} {...}>
-      {children}
-    </Pager>
-
-    // e.g: render this somewhere
-    <Progress animatedIndex={animatedIndex} numberOfScreens={children.length}>
-  </View>
-}
-```
-
-There are three right now: `<Pagination />`, `<Slider />` and `<Progress />`. The API for these might change as it would be nice to have less opinionated and configurable components here.
-
-```javascript
-// e.g emphasize active circle
-const circleInterpolation = {
-  transform: [
-    {
-      scale: {
-        inputRange: [-2, -1, 0, 1, 2],
-        outputRange: [0.5, 0.5, 0.8, 0.5, 0.5],
-      },
-    },
-  ],
-};
-
-// e.g - position circles vertically
-<Pagination
-  animatedIndex={animatedIndex}
-  style={{ height: 200, width: 40, flexDirection: 'column' }}
-  pageInterpolation={circleInterpolation}
->
-  <Circle />
-  <Circle />
-  <Circle />
-</Pagination>;
-```
-
-```javascript
-<Slider
-  numberOfScreens={children.length}
-  animatedIndex={animatedIndex}
-  style={{
-    backgroundColor: activeColor,
-  }}
-/>
-```
-
-```javascript
-<Progress
-  numberOfScreens={3}
-  animatedIndex={animatedIndex}
-  style={{
-    backgroundColor: activeColor,
-    height: 4,
-  }}
-/>
-```
-
-## PagerProvider
-
-You can omit a lot of the boilerplate props from `<Pager />` components if you wrap them in a PagerProvider:
-
-```javascript
-function MyPager() {
-  // these are optional props if you want to fully control the pager
-  const [activeIndex, onChange] = useState(1);
-
-  return (
-    <PagerProvider activeIndex={activeIndex} onChange={onChange}>
-      <Pager>
-        <Screen />
-        <Screen />
-        <Screen />
-      </Pager>
-    </PagerProvider>
-  );
-}
-```
-
-If you want to access any of these values deeper in the tree, you'll want the `usePager()` hook:
-
-```javascript
-// ...somewhere in your app
-import { usePager } from '@crowdlinker/react-native-pager';
-
-function Controls() {
-  const [activeIndex, onChange] = usePager();
-
-  return (
-    <View>
-      <Button title="Increment" onPress={() => onChange(activeIndex + 1)} />
-      <Button title="Decrement" onPress={() => onChange(activeIndex - 1)} />
-    </View>
-  );
-}
-```
-
-## Hooks
-
-There are a number of useful hooks you can use to access values from the Pager:
+There are a number of useful hooks you can use in your screens when you wrap `<Pager />` in a `<PagerProvider />`
 
 ```typescript
   usePager(): [activeIndex, onChange, translationValue, animatedIndex]
   useFocus(): boolean -> is screen focused
-  useAnimatedOffset(index: number) -> animatedIndex relative to index e.g -2, -1, 0, 1, 2, etc
+  useOffset(index: number) -> animatedIndex value relative to the given index
   useOnFocus(fn) -> fn() to fire on screen focus
   useIndex() -> the index of the screen
   useAnimatedIndex() -> the animatedIndex value of the pager
+  useInterpolation(interpolationConfig) -> interpolated style object
 ```
 
 ### What is animatedIndex?
 
 Animated index represents the animated value of the active index -- it includes possible intermediate values.
-When panning or transitioning, the activeIndex value moves from 0 -> 1 but the animatedIndex value captures all intermediate values between 0 and 1 during this transition
+When panning or transitioning, the activeIndex value moves from 0 -> 1 but the animatedIndex value captures all intermediate values between 0 and 1 during this transition.
 
-## Functions
-
-```typescript
-  interpolateWithConfig(offset: Animated.Node<number>, pageInterpolation: iPageInterpolation) -> ViewStyle
-```
-
-This function can be used in your components to provide style transforms for a given animated node, for example using the useAnimatedOffset(index) to interpolate specific opacity or scale styles based on your components relative position to the active index
-
-e.g:
+## Hooks in action
 
 ```javascript
-function MySlide() {
-  const index = useIndex();
-  const offset = useAnimatedOffset(index);
+function MySlide(props) {
+  const [data, setData] = useState();
 
-  const style = interpolateWithConfig(offset, {
+  useOnFocus(() => {
+    if (!data) {
+      myApi.fetchData(props);
+    }
+  });
+
+  const style = useInterpolation({
     transform: [
       {
         scale: {
           inputRange: [-1, 0, 1],
           outputRange: [0.9, 1, 0.9],
+          extrapolate: 'clamp',
+        },
+      },
+      {
+        rotate: {
+          unit: 'deg',
+          inputRange: [-1, 0, 1],
+          outputRange: [90, 0, 120],
         },
       },
     ],
@@ -615,3 +186,55 @@ function MySlide() {
   return <Animated.View style={{ flex: 1, ...style }}>...</Animated.View>;
 }
 ```
+
+# Interpolation
+
+One of the core features of this library is the ability to customize style transformations based on a screen's position relative to the focused screen.
+
+Here is an example of an interpolation configuration:
+
+```javascript
+const scaledDown = {
+  transform: [
+    {
+      scaleX: {
+        inputRange: [-1, 0, 1],
+        outputRange: [0.8, 1, 0.8],
+        extrapolate: 'clamp',
+      },
+    },
+  ],
+};
+```
+
+The object itself is the same shape as any `style` prop you would normally pass into a `<Animated.View />` component. However, the values of these properties define an interpolation configuration.
+
+The input range refers to the position relative to the focused screen:
+
+```javascript
+inputRange: [-1, 0, 1];
+// [-1] targets the screen before the focused screen
+// [0] targets the screen that is focused
+// [1] targets the screen after the focused screen
+```
+
+The output range reflects the style values that will be applied for each specified inputRange value:
+
+```javascript
+outputRange: [0.8, 1, 0.8];
+// [0.8] will be applied to the screen before the focused screen
+// [1] will be applied to the screen that is focused
+// [0.8] will be applied to the screen after the focused screen
+```
+
+In this case, screens that are on the left and right of the focused screen will be scaled to 80% of their size, and any screen outside of this range will also be given 80% scale.
+
+You can customize the behaviour of all of the screens in a `<Pager />` by passing this configuration as the `pageInterpolation` prop. The interpolations can target all kinds of style properties, such as translations, rotations, and more.
+
+Alternatively, you can customize styles for individual screens by using the `useInterpolation()` hook. This accepts the same configuration object, and will return the style property that you can apply to your `Animated.View`
+
+The interpolation configs can be found in the [`react-native-reanimated` docs here](https://github.com/kmagiera/react-native-reanimated#interpolate).
+
+# Examples
+
+All of the examples in the gifs above (and more) are available in the `/example/src` directory of this repo. For the most part, these are different configurations of the `pageInterpolation` prop. There is all kinds of neat stuff you can do with these - if you have a particular configuration you'd like to share, please submit a PR and spread the love!

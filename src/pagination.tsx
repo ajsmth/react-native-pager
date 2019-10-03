@@ -1,11 +1,7 @@
 import React, { Children } from 'react';
 import Animated from 'react-native-reanimated';
 import { ViewStyle, LayoutChangeEvent } from 'react-native';
-import {
-  iPageInterpolation,
-  useAnimatedOffset,
-  useAnimatedIndex,
-} from './pager';
+import { iPageInterpolation, useOffset, useAnimatedIndex } from './pager';
 import { memoize, interpolateWithConfig } from './util';
 
 const { Value, divide, multiply, add } = Animated;
@@ -56,7 +52,7 @@ function PaginationItem({
   index,
   style,
 }: iPaginationItem) {
-  const offset = useAnimatedOffset(index);
+  const offset = useOffset(index);
   const configStyles = memoize(
     interpolateWithConfig(offset, pageInterpolation)
   );
@@ -70,7 +66,6 @@ function PaginationItem({
 
 interface iSlider {
   numberOfScreens: number;
-  animatedIndex?: Animated.Value<number>;
   style: ViewStyle;
 }
 

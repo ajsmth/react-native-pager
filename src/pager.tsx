@@ -752,12 +752,19 @@ function useAnimatedIndex() {
   return pager[3];
 }
 
-function useAnimatedOffset(index: number) {
+function useOffset(index: number) {
   const pager = usePager();
   const animatedIndex = pager[3];
   const offset = memoize(sub(index, animatedIndex));
 
   return offset;
+}
+
+function useInterpolation(pageInterpolation: iPageInterpolation) {
+  const index = useIndex();
+  const offset = useOffset(index);
+  const styles = interpolateWithConfig(offset, pageInterpolation);
+  return styles;
 }
 
 export {
@@ -766,8 +773,9 @@ export {
   PagerContext,
   usePager,
   useFocus,
-  useAnimatedOffset,
+  useOffset,
   useOnFocus,
   useIndex,
   useAnimatedIndex,
+  useInterpolation,
 };

@@ -10,9 +10,10 @@ import {
 import {
   useFocus,
   useOnFocus,
-  useAnimatedOffset,
+  useOffset,
   interpolateWithConfig,
   useIndex,
+  useInterpolation,
 } from '@crowdlinker/react-native-pager';
 import Animated from 'react-native-reanimated';
 
@@ -31,9 +32,7 @@ function Slide() {
   // const [count, setCount] = useState(0);
   const focused = useFocus();
   const index = useIndex();
-  // const offset = useAnimatedOffset(index);
-
-  // const style = interpolateWithConfig(offset, {
+  // const style = useInterpolation({
   //   transform: [
   //     {
   //       scale: {
@@ -55,7 +54,7 @@ function Slide() {
         backgroundColor: colors[index % colors.length],
       }}>
       <Text>{`Screen: ${index}`}</Text>
-      <Text>{`Focused: ${focused}`}</Text>
+      {/* <Text>{`Focused: ${focused}`}</Text> */}
       {/* <TextInput placeholder="Test Update" />
       <Text>{`Count: ${count}`}</Text>
       <Button title="Inc" onPress={() => setCount(count + 1)} /> */}

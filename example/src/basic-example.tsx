@@ -1,12 +1,12 @@
 import React, {useState} from 'react';
-import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
-import {Pager} from '@crowdlinker/react-native-pager';
+import {View, Text} from 'react-native';
+import {Pager, usePager} from '@crowdlinker/react-native-pager';
 import {Slide, NavigationButtons} from './shared-components';
 
-const children = Array.from({length: 1000}, (_, i) => <Slide key={i} i={i} />);
+const children = Array.from({length: 1000}, (_, i) => <Slide key={i} />);
 
 function MyPager() {
-  const [activeIndex, onChange] = useState(500);
+  const [activeIndex, onChange] = usePager();
 
   return (
     <View>
