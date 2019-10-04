@@ -125,6 +125,8 @@ export interface iPager {
     prev?: number;
     next?: number;
   };
+  pageWidth?: number | string;
+  pageHeight?: number | string;
 }
 const REALLY_BIG_NUMBER = 1000000000;
 
@@ -153,6 +155,8 @@ function Pager({
     next: REALLY_BIG_NUMBER,
   },
   animatedIndex: parentAnimatedIndex,
+  pageWidth = '100%',
+  pageHeight = '100%',
 }: iPager) {
   const context = useContext(PagerContext);
 
@@ -534,6 +538,8 @@ function Pager({
                     clampPrev={clampPrev}
                     clampNext={clampNext}
                     pageInterpolation={pageInterpolation}
+                    itemHeight={pageHeight}
+                    itemWidth={pageWidth}
                   >
                     <IndexProvider index={index}>
                       <FocusProvider focused={index === activeIndex}>
@@ -561,6 +567,8 @@ interface iPage {
   children: React.ReactNode;
   clampPrev: Animated.Node<number>;
   clampNext: Animated.Node<number>;
+  itemWidth: number | string;
+  itemHeight: number | string;
 }
 
 function _Page({
@@ -573,6 +581,8 @@ function _Page({
   clampNext,
   pageInterpolation,
   children,
+  itemWidth,
+  itemHeight,
 }: iPage) {
   // compute the absolute position of the page based on index and dimension
   // this means that it's not relative to any other child, which is good because
@@ -625,6 +635,8 @@ function _Page({
         ...defaultStyle,
         opacity: initialized ? 1 : 0,
         zIndex: zIndex,
+        width: itemWidth,
+        height: itemHeight,
       }}
     >
       <Animated.View style={[StyleSheet.absoluteFillObject, otherStyles]}>
