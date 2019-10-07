@@ -1,6 +1,6 @@
 {
   "name": "@crowdlinker/react-native-pager",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "main": "dist/index.js",
   "module": "dist/pager.esm.js",
   "typings": "dist/index.d.ts",
