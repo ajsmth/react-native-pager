@@ -494,59 +494,61 @@ function Pager({
   const totalDimension = memoize(multiply(dimension, numberOfScreens));
 
   return (
-    <Animated.View style={style || { flex: 1 }} onLayout={handleLayout}>
-      {width === 0 ? null : (
-        <PanGestureHandler
-          {...panProps}
-          onGestureEvent={handleGesture}
-          onHandlerStateChange={handleStateChange}
-        >
-          <Animated.View style={{ flex: 1 }}>
+    <Animated.View style={{ height, width: '100%' }}>
+      <PanGestureHandler
+        {...panProps}
+        onGestureEvent={handleGesture}
+        onHandlerStateChange={handleStateChange}
+      >
+        <Animated.View style={{ flex: 1 }}>
+          <Animated.View style={style || { flex: 1 }} onLayout={handleLayout}>
             <Animated.View
               style={{
-                ...StyleSheet.absoluteFillObject,
+                flex: 1,
                 [targetDimension]: totalDimension,
                 transform: [{ [translateValue]: translation }],
               }}
             >
-              {adjacentChildren.map((child: any, i) => {
-                // use map instead of React.Children because we want to track
-                // the keys of these children by there index
-                // React.Children shifts these key values intelligently, but it
-                // causes issues with the memoized values in <Page /> components
-                let index = i;
+              {width === 0
+                ? null
+                : adjacentChildren.map((child: any, i) => {
+                    // use map instead of React.Children because we want to track
+                    // the keys of these children by there index
+                    // React.Children shifts these key values intelligently, but it
+                    // causes issues with the memoized values in <Page /> components
+                    let index = i;
 
-                if (adjacentChildOffset !== undefined) {
-                  index =
-                    activeIndex <= adjacentChildOffset
-                      ? i
-                      : activeIndex - adjacentChildOffset + i;
-                }
+                    if (adjacentChildOffset !== undefined) {
+                      index =
+                        activeIndex <= adjacentChildOffset
+                          ? i
+                          : activeIndex - adjacentChildOffset + i;
+                    }
 
-                return (
-                  <Page
-                    key={index}
-                    index={index}
-                    dimension={dimension}
-                    translation={translation}
-                    targetDimension={targetDimension}
-                    translateValue={translateValue}
-                    clampPrev={clampPrev}
-                    clampNext={clampNext}
-                    pageInterpolation={pageInterpolation}
-                  >
-                    <IndexProvider index={index}>
-                      <FocusProvider focused={index === activeIndex}>
-                        {child}
-                      </FocusProvider>
-                    </IndexProvider>
-                  </Page>
-                );
-              })}
+                    return (
+                      <Page
+                        key={index}
+                        index={index}
+                        dimension={dimension}
+                        translation={translation}
+                        targetDimension={targetDimension}
+                        translateValue={translateValue}
+                        clampPrev={clampPrev}
+                        clampNext={clampNext}
+                        pageInterpolation={pageInterpolation}
+                      >
+                        <IndexProvider index={index}>
+                          <FocusProvider focused={index === activeIndex}>
+                            {child}
+                          </FocusProvider>
+                        </IndexProvider>
+                      </Page>
+                    );
+                  })}
             </Animated.View>
           </Animated.View>
-        </PanGestureHandler>
-      )}
+        </Animated.View>
+      </PanGestureHandler>
     </Animated.View>
   );
 }

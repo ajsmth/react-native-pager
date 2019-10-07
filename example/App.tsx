@@ -19,6 +19,7 @@ import {Stack} from './src/stack';
 import {Tabs} from './src/tabs';
 import {MyPager} from './src/basic-example';
 import {PagerProvider} from '@crowdlinker/react-native-pager';
+import {ContainerStyle} from './src/panhandler-width';
 
 const App = () => {
   const [activeIndex, setActiveIndex] = useState(1);
