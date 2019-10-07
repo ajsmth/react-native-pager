@@ -52,7 +52,12 @@ function SwipeCards() {
       <Pager
         clamp={{next: 0}}
         adjacentChildOffset={3}
-        style={{height: 200, width: 200, alignSelf: 'center', padding: 10}}
+        style={{
+          height: 200,
+          width: 200,
+          alignSelf: 'center',
+          padding: 5,
+        }}
         pageInterpolation={swipeCardsConfig}>
         {Array.from({length: activeIndex + 4}, (_, i) => (
           <Slide key={i} />

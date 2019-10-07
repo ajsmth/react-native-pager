@@ -9,7 +9,7 @@ function MyPager() {
   const [activeIndex, onChange] = usePager();
 
   return (
-    <View>
+    <View style={{flex: 1}}>
       <Text
         style={{
           textAlign: 'center',
@@ -18,10 +18,7 @@ function MyPager() {
         {`Number of screens: ${children.length}`}
       </Text>
 
-      <Pager
-        style={{height: 200, width: 200, alignSelf: 'center'}}
-        activeIndex={activeIndex}
-        onChange={onChange}>
+      <Pager activeIndex={activeIndex} onChange={onChange}>
         {children}
       </Pager>
 

@@ -36,16 +36,21 @@ const pagerConfig: iPageInterpolation = {
 const ContainerStyle = () => {
   const [activeIndex, onChange] = usePager();
   return (
-    <View style={{flex: 1, justifyContent: 'center'}}>
-      <View style={{height: 100, padding: 5}}>
-        <Pager
-          pageInterpolation={pagerConfig}
-          style={{height: 80, width: 60, alignSelf: 'center', padding: 10}}>
-          {[...Array(10).keys()].map(n => (
-            <Square key={n}>{n}</Square>
-          ))}
-        </Pager>
-      </View>
+    <View>
+      <Pager
+        pageInterpolation={pagerConfig}
+        containerStyle={{height: 100, borderWidth: 1, paddingVertical: 10}}
+        style={{
+          height: 80,
+          width: 60,
+          alignSelf: 'center',
+          paddingVertical: 5,
+          borderWidth: 1,
+        }}>
+        {[...Array(10).keys()].map(n => (
+          <Square key={n}>{n}</Square>
+        ))}
+      </Pager>
 
       <NavigationButtons activeIndex={activeIndex} onChange={onChange} />
     </View>

@@ -34,6 +34,7 @@ function Stack() {
         clamp={{prev: 0.4}}
         clampDrag={{next: 0}}
         adjacentChildOffset={4}
+        containerStyle={{height: 200}}
         style={{
           height: 200,
           width: 200,
@@ -41,7 +42,7 @@ function Stack() {
         }}
         pageInterpolation={stackConfig}>
         {Array.from({length: activeIndex + 3}, (_, i) => (
-          <Slide key={i} i={i} />
+          <Slide key={i} />
         ))}
       </Pager>
 

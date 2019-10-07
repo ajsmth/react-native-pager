@@ -114,6 +114,7 @@ export interface iPager {
   maxIndex?: number;
   adjacentChildOffset?: number;
   style?: ViewStyle;
+  containerStyle?: ViewStyle;
   animatedValue?: Animated.Value<number>;
   animatedIndex?: Animated.Value<number>;
   type?: 'horizontal' | 'vertical';
@@ -142,6 +143,7 @@ function Pager({
   adjacentChildOffset = 10,
   animatedValue,
   style,
+  containerStyle,
   type = 'horizontal',
   pageInterpolation,
   clamp = {
@@ -251,6 +253,7 @@ function Pager({
 
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
+
   const dimension = memoize(new Value(0));
 
   function handleLayout({ nativeEvent: { layout } }: LayoutChangeEvent) {
@@ -493,58 +496,71 @@ function Pager({
   // set the total width of the container view to the sum width of all the screens
   const totalDimension = memoize(multiply(dimension, numberOfScreens));
 
+  // grabbing the height property from the style prop if there is no container style, this reduces
+  // the chances of messing up the layout with containerStyle configurations
+  // can be overridden by the prop itself, but its likely that this is what is intended most of the time
+  // also has the benefit of covering 100% width of container, meaning better pan coverage on android
+  const defaultContainerStyle =
+    style && style.height ? { height: style.height } : undefined;
+
+  // extra Animated.Views below may seem redundant but they preserve applied styles e.g padding and margin
+  // of the page views
   return (
-    <Animated.View style={{ height, width: '100%' }}>
+    <Animated.View
+      style={containerStyle || defaultContainerStyle || { flex: 1 }}
+    >
       <PanGestureHandler
         {...panProps}
         onGestureEvent={handleGesture}
         onHandlerStateChange={handleStateChange}
       >
         <Animated.View style={{ flex: 1 }}>
-          <Animated.View style={style || { flex: 1 }} onLayout={handleLayout}>
-            <Animated.View
-              style={{
-                flex: 1,
-                [targetDimension]: totalDimension,
-                transform: [{ [translateValue]: translation }],
-              }}
-            >
-              {width === 0
-                ? null
-                : adjacentChildren.map((child: any, i) => {
-                    // use map instead of React.Children because we want to track
-                    // the keys of these children by there index
-                    // React.Children shifts these key values intelligently, but it
-                    // causes issues with the memoized values in <Page /> components
-                    let index = i;
+          <Animated.View style={style || { flex: 1 }}>
+            <Animated.View style={{ flex: 1 }} onLayout={handleLayout}>
+              <Animated.View
+                style={{
+                  flex: 1,
+                  [targetDimension]: totalDimension,
+                  transform: [{ [translateValue]: translation }],
+                }}
+              >
+                {width === 0
+                  ? null
+                  : adjacentChildren.map((child: any, i) => {
+                      // use map instead of React.Children because we want to track
+                      // the keys of these children by there index
+                      // React.Children shifts these key values intelligently, but it
+                      // causes issues with the memoized values in <Page /> components
+                      let index = i;
 
-                    if (adjacentChildOffset !== undefined) {
-                      index =
-                        activeIndex <= adjacentChildOffset
-                          ? i
-                          : activeIndex - adjacentChildOffset + i;
-                    }
+                      if (adjacentChildOffset !== undefined) {
+                        index =
+                          activeIndex <= adjacentChildOffset
+                            ? i
+                            : activeIndex - adjacentChildOffset + i;
+                      }
 
-                    return (
-                      <Page
-                        key={index}
-                        index={index}
-                        dimension={dimension}
-                        translation={translation}
-                        targetDimension={targetDimension}
-                        translateValue={translateValue}
-                        clampPrev={clampPrev}
-                        clampNext={clampNext}
-                        pageInterpolation={pageInterpolation}
-                      >
-                        <IndexProvider index={index}>
-                          <FocusProvider focused={index === activeIndex}>
-                            {child}
-                          </FocusProvider>
-                        </IndexProvider>
-                      </Page>
-                    );
-                  })}
+                      return (
+                        <Page
+                          key={index}
+                          index={index}
+                          dimension={dimension}
+                          translation={translation}
+                          targetDimension={targetDimension}
+                          translateValue={translateValue}
+                          clampPrev={clampPrev}
+                          clampNext={clampNext}
+                          pageInterpolation={pageInterpolation}
+                        >
+                          <IndexProvider index={index}>
+                            <FocusProvider focused={index === activeIndex}>
+                              {child}
+                            </FocusProvider>
+                          </IndexProvider>
+                        </Page>
+                      );
+                    })}
+              </Animated.View>
             </Animated.View>
           </Animated.View>
         </Animated.View>

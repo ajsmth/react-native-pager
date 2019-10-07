@@ -70,7 +70,8 @@ threshold?: number; - percentage (0 - 1), how far should the user drag before sn
 minIndex?: number; - minimum index to swipe to (default 0)
 maxIndex?: number; - maximum index to swipe to (default children.length - 1)
 adjacentChildOffset?: number; - the number of children adjacent to the activeIndex to render
-style?: ViewStyle; - container style for the pager
+style?: ViewStyle; - style for pages
+containerStyle?: ViewStyle - style for pan handler container
 animatedValue?: Animated.Value<number>; - total translation value of the pager
 animatedIndex?: Animated.Value<number>; - activeIndex as an animated value e.g intermediate values
 type?: 'horizontal' | 'vertical'; - target horizontal swipes or vertical swipes
