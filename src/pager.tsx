@@ -634,17 +634,19 @@ function useAnimatedIndex() {
 }
 
 function useOffset(index: number) {
-  const pager = usePager();
-  const animatedIndex = pager[2];
+  const animatedIndex = useAnimatedIndex();
   const offset = memoize(sub(index, animatedIndex));
 
   return offset;
 }
 
-function useInterpolation(pageInterpolation: iPageInterpolation) {
-  const index = useIndex();
-  const offset = useOffset(index);
-  const styles = interpolateWithConfig(offset, pageInterpolation);
+function useInterpolation(
+  pageInterpolation: iPageInterpolation,
+  index?: number
+) {
+  const _index = index !== undefined ? index : useIndex();
+  const offset = useOffset(_index);
+  const styles = memoize(interpolateWithConfig(offset, pageInterpolation));
   return styles;
 }
 

@@ -18,9 +18,7 @@ function MyPager() {
         {`Number of screens: ${children.length}`}
       </Text>
 
-      <Pager activeIndex={activeIndex} onChange={onChange}>
-        {children}
-      </Pager>
+      <Pager>{children}</Pager>
 
       <NavigationButtons activeIndex={activeIndex} onChange={onChange} />
     </View>

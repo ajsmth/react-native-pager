@@ -1,7 +1,7 @@
 import React, { Children } from 'react';
 import Animated from 'react-native-reanimated';
 import { ViewStyle, LayoutChangeEvent } from 'react-native';
-import { iPageInterpolation, useOffset, useAnimatedIndex } from './pager-2';
+import { iPageInterpolation, useOffset, useAnimatedIndex } from './pager';
 import { memoize, interpolateWithConfig } from './util';
 
 const { Value, divide, multiply, add } = Animated;

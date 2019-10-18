@@ -54,7 +54,7 @@ function Slide() {
         backgroundColor: colors[index % colors.length],
       }}>
       <Text>{`Screen: ${index}`}</Text>
-      {/* <Text>{`Focused: ${focused}`}</Text> */}
+      <Text>{`Focused: ${focused}`}</Text>
       {/* <TextInput placeholder="Test Update" />
       <Text>{`Count: ${count}`}</Text>
       <Button title="Inc" onPress={() => setCount(count + 1)} /> */}
