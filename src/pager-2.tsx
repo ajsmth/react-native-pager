@@ -86,6 +86,9 @@ const {
   max,
   min,
   greaterThan,
+  greaterOrEq,
+  lessOrEq,
+  and,
   abs,
   lessThan,
   ceil,
@@ -128,27 +131,30 @@ const minMax = proc((value, minimum, maximum) =>
 );
 
 function Pager({
-  children,
-  panProps,
-  style,
-  type = 'horizontal',
-  containerStyle,
-  adjacentChildOffset,
   activeIndex: parentActiveIndex,
   onChange: parentOnChange,
-  initialIndex,
-  threshold = 0.1,
+  initialIndex = 0,
+  children,
   springConfig,
-  clampDrag = {
-    next: REALLY_BIG_NUMBER,
-    prev: REALLY_BIG_NUMBER,
-  },
-  clamp = {
-    next: REALLY_BIG_NUMBER,
-    prev: REALLY_BIG_NUMBER,
-  },
-
+  panProps = {},
+  pageSize = 1,
+  threshold = 0.1,
+  minIndex = 0,
+  maxIndex: parentMax,
+  adjacentChildOffset = 10,
+  style,
+  containerStyle,
+  type = 'horizontal',
   pageInterpolation,
+  clamp = {
+    prev: REALLY_BIG_NUMBER,
+    next: REALLY_BIG_NUMBER,
+  },
+  clampDrag = {
+    prev: REALLY_BIG_NUMBER,
+    next: REALLY_BIG_NUMBER,
+  },
+  animatedIndex: parentAnimatedIndex,
 }: iPager) {
   const isControlled = parentActiveIndex !== undefined;
 
@@ -157,6 +163,13 @@ function Pager({
   const activeIndex = isControlled
     ? (parentActiveIndex as number)
     : (_activeIndex as number);
+
+  const numberOfScreens = Children.count(children);
+
+  const maxIndex =
+    parentMax === undefined
+      ? Math.ceil((numberOfScreens - 1) / pageSize)
+      : parentMax;
 
   const onChange = isControlled ? (parentOnChange as any) : (_onChange as any);
 
@@ -193,7 +206,6 @@ function Pager({
     )
   );
 
-  const numberOfScreens = Children.count(children);
   const [width, setWidth] = useState(-1);
   const [height, setHeight] = useState(-1);
 
@@ -220,25 +232,39 @@ function Pager({
     [width, height]
   );
 
-  const dragStart = memoize(new Value(0));
-  const swiping = memoize(new Value(0));
-  const position = memoize(new Value(activeIndex));
-  const nextIndex = memoize(new Value(activeIndex));
-  const change = memoize(new Value(0));
-  const absChange = memoize(new Value(0));
-  const indexChange = memoize(new Value(0));
-  const clamped = memoize(new Value(0));
-  const clock = memoize(new Clock());
-  const shouldTransition = memoize(new Value(0));
-
   // props that might change over time should be reactive:
   const animatedThreshold = useAnimatedValue(threshold);
   const animatedActiveIndex = useAnimatedValue(activeIndex);
   const clampDragPrev = useAnimatedValue(clampDrag.prev, REALLY_BIG_NUMBER);
   const clampDragNext = useAnimatedValue(clampDrag.next, REALLY_BIG_NUMBER);
+  const animatedMaxIndex = useAnimatedValue(maxIndex);
+  const animatedMinIndex = useAnimatedValue(minIndex);
+
+  const dragStart = memoize(new Value(0));
+  const swiping = memoize(new Value(0));
+  const position = memoize(parentAnimatedIndex || new Value(activeIndex));
+  const nextIndex = memoize(new Value(activeIndex));
+
+  const change = memoize(sub(animatedActiveIndex, position));
+  const absChange = memoize(abs(change));
+  const shouldTransition = memoize(
+    and(
+      greaterThan(absChange, animatedThreshold),
+      lessOrEq(position, animatedMaxIndex),
+      greaterOrEq(position, animatedMinIndex)
+    )
+  );
+  const clamped = memoize(
+    minMax(divide(delta, dimension), multiply(clampDragNext, -1), clampDragPrev)
+  );
+
+  const indexChange = memoize(new Value(0));
+  const clock = memoize(new Clock());
 
   useEffect(() => {
-    nextIndex.setValue(activeIndex);
+    if (activeIndex >= minIndex && activeIndex <= maxIndex) {
+      nextIndex.setValue(activeIndex);
+    }
   }, [activeIndex]);
 
   const animatedIndex = memoize(
@@ -249,30 +275,11 @@ function Pager({
           cond(clockRunning(clock), stopClock(clock)),
           cond(swiping, 0, [set(dragStart, position), set(swiping, 1)]),
 
-          set(change, sub(animatedActiveIndex, position)),
-          set(absChange, abs(change)),
-          set(shouldTransition, greaterThan(absChange, animatedThreshold)),
-
-          set(
-            clamped,
-            minMax(
-              divide(delta, dimension),
-              multiply(clampDragNext, -1),
-              clampDragPrev
-            )
-          ),
-
-          debug('clamped', clamped),
-          debug('clampDragNext', clampDragNext),
-          debug('clampDragPrev', clampDragPrev),
-          debug('change', divide(delta, dimension)),
-
           set(position, sub(dragStart, clamped)),
         ],
         [
           cond(swiping, [
             set(swiping, 0),
-            set(nextIndex, animatedActiveIndex),
             cond(shouldTransition, [
               set(indexChange, ceil(absChange)),
               set(
@@ -305,7 +312,10 @@ function Pager({
     multiply(add(animatedIndex, clampNextValue), dimension)
   );
 
-  const containerTranslation = memoize(multiply(animatedIndex, dimension, -1));
+  const animatedPageSize = useAnimatedValue(pageSize);
+  const containerTranslation = memoize(
+    multiply(animatedIndex, dimension, animatedPageSize, -1)
+  );
 
   const adjacentChildren =
     adjacentChildOffset !== undefined
@@ -408,9 +418,7 @@ function Page({
   const offset = memoize(sub(index, animatedIndex));
 
   // apply interpolation configs to <Page />
-  const interpolatedStyles = memoize(
-    interpolateWithConfig(offset, pageInterpolation)
-  );
+  const interpolatedStyles = interpolateWithConfig(offset, pageInterpolation);
 
   // take out zIndex here as it needs to be applied to siblings, which inner containers
   // are not, however the outer container requires the absolute translateX/Y to properly

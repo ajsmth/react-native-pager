@@ -48,8 +48,8 @@ const App = () => {
       <View style={{flex: 1, backgroundColor: 'white'}}>
         <Pager
           pageInterpolation={stackConfig}
-          clamp={{prev: 0.4, next: 1}}
-          clampDrag={{next: 0}}
+          // clamp={{prev: 0.4, next: 1}}
+          // clampDrag={{next: 0}}
           activeIndex={activeIndex}
           onChange={onChange}>
           <Slide index={0} />
