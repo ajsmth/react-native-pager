@@ -16,6 +16,7 @@ import {
   useInterpolation,
 } from '@crowdlinker/react-native-pager';
 import Animated from 'react-native-reanimated';
+import {ReText} from 'react-native-redash';
 
 const colors = [
   'aquamarine',
@@ -28,10 +29,10 @@ const colors = [
   'salmon',
 ];
 
-function Slide() {
+function Slide({index}: any) {
   // const [count, setCount] = useState(0);
-  const focused = useFocus();
-  const index = useIndex();
+  // const focused = useFocus();
+  // const index = useIndex();
   // const style = useInterpolation({
   //   transform: [
   //     {
@@ -51,9 +52,11 @@ function Slide() {
         alignItems: 'center',
         borderRadius: 10,
         marginHorizontal: 5,
+        borderWidth: 1,
         backgroundColor: colors[index % colors.length],
       }}>
       <Text>{`Screen: ${index}`}</Text>
+      {/* <ReText text={animatedValue} /> */}
       {/* <Text>{`Focused: ${focused}`}</Text> */}
       {/* <TextInput placeholder="Test Update" />
       <Text>{`Count: ${count}`}</Text>
