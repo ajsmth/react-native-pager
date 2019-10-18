@@ -6,54 +6,37 @@ import Animated from 'react-native-reanimated';
 
 const {multiply, floor} = Animated;
 
-const kilterCardsConfig: iPageInterpolation = {
+const verticalConfig: iPageInterpolation = {
   transform: [
     {
       scale: {
         inputRange: [-1, 0, 1],
-        outputRange: [0.95, 1, 0.95],
-      },
-    },
-
-    {
-      translateY: {
-        inputRange: [-1, 0, 1, 2],
-        outputRange: [0, 0, 10, -15],
-      },
-    },
-
-    {
-      rotate: {
-        unit: 'deg',
-        inputRange: [-1, 0, 1, 2],
-        outputRange: [-20, 0, -7.5, 5],
+        outputRange: [0.8, 1, 0.9],
       },
     },
   ],
 
-  zIndex: (offset: Animated.Node<number>) => multiply(floor(offset), -1),
-
   opacity: {
-    inputRange: [-2, -1, 0, 1, 2, 3, 4],
-    outputRange: [0, 0, 1, 1, 1, 0, 0],
+    inputRange: [-1, 0, 1, 2, 3],
+    outputRange: [1, 1, 1, 1, 0],
   },
+
+  zIndex: offset => multiply(floor(offset), -1),
 };
 
-function KilterCards() {
-  const [activeIndex, onChange] = useState(3);
+function VerticalPager() {
+  const [activeIndex, onChange] = useState(2);
 
   return (
     <View>
       <Pager
+        type="vertical"
         activeIndex={activeIndex}
         onChange={onChange}
-        clamp={{next: 0}}
-        threshold={0.3}
-        adjacentChildOffset={3}
         style={{height: 200, width: 200, alignSelf: 'center', padding: 10}}
-        pageInterpolation={kilterCardsConfig}>
+        pageInterpolation={verticalConfig}>
         {Array.from({length: activeIndex + 3}, (_, i) => (
-          <Slide key={i} i={i} />
+          <Slide key={i} />
         ))}
       </Pager>
       <NavigationButtons activeIndex={activeIndex} onChange={onChange} />
@@ -61,4 +44,4 @@ function KilterCards() {
   );
 }
 
-export {KilterCards};
+export {VerticalPager};
