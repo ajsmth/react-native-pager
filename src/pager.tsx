@@ -124,6 +124,17 @@ const minMax = proc((value, minimum, maximum) =>
   min(max(value, minimum), maximum)
 );
 
+// at its core, this component converts an activeIndex integer value to an Animated.Value
+// this animated value represents all intermediate values of a pager, e.g when a user is dragging, the index
+// value might be anything between 1 -> 2 as they are moving. when a gesture is completed, it figures out
+// the next activeIndex, snaps to it and passes it back. it also handles snapping to different indices when the activeIndex
+// prop changes.
+
+// all styles and positioning of child screens can be computed from this one value, based on a childs index and
+// any style config props passed to the Pager.
+
+// pretty much all other props passed to the Pager are configurations for different behaviours of what is described above
+
 function Pager({
   activeIndex: parentActiveIndex,
   onChange: parentOnChange,
@@ -142,6 +153,7 @@ function Pager({
   pageInterpolation,
   clamp = {},
   clampDrag = {},
+  animatedValue,
 }: iPager) {
   const context = useContext(PagerContext);
 
@@ -242,7 +254,11 @@ function Pager({
 
   // set the initial position - priority to direct prop over context, and context over uncontrolled
   const _position = memoize(new Value(activeIndex));
-  const position = isControlled ? _position : context ? context[2] : _position;
+  const position = isControlled
+    ? animatedValue || _position
+    : context
+    ? context[2]
+    : _position;
 
   // pan event values to track
   const dragStart = memoize(new Value(0));
@@ -662,4 +678,5 @@ export {
   useAnimatedIndex,
   useInterpolation,
   IndexProvider,
+  FocusProvider,
 };
