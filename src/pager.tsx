@@ -6,7 +6,12 @@ import React, {
   useEffect,
   memo,
 } from 'react';
-import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
+import {
+  StyleSheet,
+  LayoutChangeEvent,
+  ViewStyle,
+  AccessibilityStates,
+} from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
   PanGestureHandler,
@@ -213,8 +218,22 @@ function Pager({
     )
   );
 
-  const [width, setWidth] = useState(UNSET);
-  const [height, setHeight] = useState(UNSET);
+  let initialWidth = UNSET;
+  if (style && style.width) {
+    if (typeof style.width === 'number') {
+      initialWidth = style.width;
+    }
+  }
+
+  let initialHeight = UNSET;
+  if (style && style.height) {
+    if (typeof style.height === 'number') {
+      initialHeight = style.height;
+    }
+  }
+
+  const [width, setWidth] = useState(initialWidth);
+  const [height, setHeight] = useState(initialHeight);
 
   // assign references based on vertical / horizontal configurations
   const dimension = memoize(new Value(0));
@@ -401,6 +420,7 @@ function Pager({
                   [targetDimension]: totalDimension,
                   transform: [{ [targetTransform]: containerTranslation }],
                 }}
+                accessibilityRole="tablist"
               >
                 {width === UNSET
                   ? null
@@ -436,7 +456,8 @@ function Pager({
                           </FocusProvider>
                         </IndexProvider>
                       );
-                    })}
+                    })}{' '}
+                }
               </Animated.View>
             </Animated.View>
           </Animated.View>
@@ -444,6 +465,18 @@ function Pager({
       </PanGestureHandler>
     </Animated.View>
   );
+}
+
+interface iPage {
+  children: React.ReactNode;
+  index: number;
+  minimum: Animated.Node<number>;
+  maximum: Animated.Node<number>;
+  dimension: Animated.Node<number>;
+  targetTransform: 'translateX' | 'translateY';
+  targetDimension: 'width' | 'height';
+  pageInterpolation: iPageInterpolation | undefined;
+  animatedIndex: Animated.Value<number>;
 }
 
 function _Page({
@@ -456,7 +489,7 @@ function _Page({
   targetDimension,
   pageInterpolation,
   animatedIndex,
-}: any) {
+}: iPage) {
   // compute the absolute position of the page based on index and dimension
   // this means that it's not relative to any other child, which is good because
   // it doesn't rely on a mechanism like flex, which requires all children to be present
@@ -515,9 +548,7 @@ function _Page({
   );
 }
 
-// the only thing that changes in <Page /> is the children, since it usually
-// gets a fresh child from a .map function
-const Page = memo(_Page, () => true);
+const Page = memo(_Page);
 
 // utility to update animated values without changing their reference
 // this is key for using memoized Animated.Values and prevents costly rerenders
