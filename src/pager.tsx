@@ -6,12 +6,7 @@ import React, {
   useEffect,
   memo,
 } from 'react';
-import {
-  StyleSheet,
-  LayoutChangeEvent,
-  ViewStyle,
-  AccessibilityStates,
-} from 'react-native';
+import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
   PanGestureHandler,
@@ -273,8 +268,8 @@ function Pager({
 
   // set the initial position - priority to direct prop over context, and context over uncontrolled
   const _position = memoize(new Value(activeIndex));
-  const position = isControlled
-    ? animatedValue || _position
+  const position = animatedValue
+    ? animatedValue
     : context
     ? context[2]
     : _position;
@@ -456,8 +451,7 @@ function Pager({
                           </FocusProvider>
                         </IndexProvider>
                       );
-                    })}{' '}
-                }
+                    })}
               </Animated.View>
             </Animated.View>
           </Animated.View>
