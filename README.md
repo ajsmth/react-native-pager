@@ -139,7 +139,7 @@ style: ViewStyle;
 There are a number of useful hooks you can use in your screens when you wrap `<Pager />` in a `<PagerProvider />`
 
 ```typescript
-  usePager(): [activeIndex, onChange, translationValue, animatedIndex]
+  usePager(): [activeIndex, onChange, animatedIndex]
   useFocus(): boolean -> is screen focused
   useOffset(index: number) -> animatedIndex value relative to the given index
   useOnFocus(fn) -> fn() to fire on screen focus
