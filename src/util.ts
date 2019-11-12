@@ -111,7 +111,7 @@ function runSpring(
       ]
     ),
     spring(clock, state, config),
-    cond(state.finished, [stopClock(clock), set(position, state.position)]),
+    cond(state.finished, [stopClock(clock), set(state.position, position)]),
     state.position,
   ]);
 }
