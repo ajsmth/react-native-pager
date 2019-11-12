@@ -35,7 +35,7 @@ const App = () => {
       <View
         style={{flex: 1, backgroundColor: 'white', justifyContent: 'center'}}>
         <PagerProvider activeIndex={activeIndex} onChange={onChange}>
-          <KilterCards />
+          <VerticalPager />
         </PagerProvider>
       </View>
     </SafeAreaView>

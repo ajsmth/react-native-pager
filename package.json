@@ -6,7 +6,8 @@
   "typings": "dist/index.d.ts",
   "author": "andrew smith",
   "files": [
-    "dist"
+    "dist",
+    "mock.js"
   ],
   "repository": {
     "type": "git",

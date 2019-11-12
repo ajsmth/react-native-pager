@@ -4,7 +4,6 @@ import React, {
   createContext,
   useContext,
   useEffect,
-  memo,
 } from 'react';
 import { StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -13,7 +12,6 @@ import {
   State,
   PanGestureHandlerProperties,
 } from 'react-native-gesture-handler';
-import { memoize, interpolateWithConfig, runSpring } from './util';
 
 export type SpringConfig = {
   damping: Animated.Adaptable<number>;
@@ -73,7 +71,6 @@ const {
   cond,
   eq,
   add,
-  or,
   stopClock,
   Clock,
   set,
@@ -86,7 +83,12 @@ const {
   greaterThan,
   abs,
   ceil,
-  proc,
+  interpolate,
+  concat,
+  neq,
+  and,
+  startClock,
+  spring,
   // @ts-ignore
   debug,
 } = Animated;
@@ -119,10 +121,6 @@ export interface iPager {
   };
 }
 const REALLY_BIG_NUMBER = 1000000000;
-
-const minMax = proc((value, minimum, maximum) =>
-  min(max(value, minimum), maximum)
-);
 
 // at its core, this component converts an activeIndex integer value to an Animated.Value
 // this animated value represents all intermediate values of a pager, e.g when a user is dragging, the index
@@ -236,6 +234,8 @@ function Pager({
   const targetTransform = type === 'vertical' ? 'translateY' : 'translateX';
   const delta = type === 'vertical' ? dragY : dragX;
 
+  const layoutDimension = type === 'vertical' ? height : width;
+
   // `totalDimension` on the container view is required for android layouts to work properly
   // otherwise translations move the panHandler off of the screen
   // set the total width of the container view to the sum width of all the screens
@@ -247,17 +247,6 @@ function Pager({
   }
 
   const TYPE = type === 'vertical' ? VERTICAL : HORIZONTAL;
-
-  // it's important to use dimension as an animated value because the computations are memoized
-  Animated.useCode(
-    cond(
-      // dimension already set to last layout
-      or(eq(dimension, width), eq(dimension, height)),
-      [],
-      [cond(eq(TYPE, VERTICAL), set(dimension, height), set(dimension, width))]
-    ),
-    [width, height]
-  );
 
   // props that might change over time should be reactive:
   const animatedThreshold = useAnimatedValue(threshold);
@@ -288,7 +277,10 @@ function Pager({
   // e.g prev => 0.5, next => 0.5 means change can only be between [-0.5, 0.5]
   // minMax order is reversed because next is negative in translation values
   const clampedDelta = memoize(
-    minMax(divide(delta, dimension), multiply(clampDragNext, -1), clampDragPrev)
+    min(
+      max(divide(delta, dimension), multiply(clampDragNext, -1)),
+      clampDragPrev
+    )
   );
 
   const clock = memoize(new Clock());
@@ -326,14 +318,18 @@ function Pager({
                 nextIndex,
                 cond(
                   greaterThan(change, 0),
-                  minMax(
-                    sub(animatedActiveIndex, indexChange),
-                    animatedMinIndex,
+                  min(
+                    max(
+                      sub(animatedActiveIndex, indexChange),
+                      animatedMinIndex
+                    ),
                     animatedMaxIndex
                   ),
-                  minMax(
-                    add(animatedActiveIndex, indexChange),
-                    animatedMinIndex,
+                  min(
+                    max(
+                      add(animatedActiveIndex, indexChange),
+                      animatedMinIndex
+                    ),
                     animatedMaxIndex
                   )
                 )
@@ -395,12 +391,69 @@ function Pager({
   const defaultContainerStyle =
     style && style.height ? { height: style.height } : undefined;
 
+  function renderChildren() {
+    // waiting for initial layout - except when testing
+    if (width === UNSET) {
+      return null;
+    }
+
+    return adjacentChildren.map((child: any, i) => {
+      // use map instead of React.Children because we want to track
+      // the keys of these children by there index
+      // React.Children shifts these key values intelligently, but it
+      // causes issues with the memoized values in <Page /> components
+      let index = i;
+
+      if (adjacentChildOffset !== undefined) {
+        index =
+          activeIndex <= adjacentChildOffset
+            ? i
+            : activeIndex - adjacentChildOffset + i;
+      }
+
+      return (
+        <IndexProvider index={index} key={index}>
+          <FocusProvider focused={index === activeIndex}>
+            <Page
+              index={index}
+              animatedIndex={animatedIndex}
+              minimum={minimum}
+              maximum={maximum}
+              dimension={dimension}
+              targetTransform={targetTransform}
+              targetDimension={targetDimension}
+              pageInterpolation={pageInterpolation}
+            >
+              {child}
+            </Page>
+          </FocusProvider>
+        </IndexProvider>
+      );
+    });
+  }
+
   // extra Animated.Views below may seem redundant but they preserve applied styles e.g padding and margin
   // of the page views
   return (
     <Animated.View
       style={containerStyle || defaultContainerStyle || { flex: 1 }}
     >
+      <Animated.Code
+        key={layoutDimension}
+        exec={cond(
+          // dimension already set to last layout
+          and(eq(dimension, width), eq(dimension, height)),
+          [],
+          [
+            cond(
+              eq(TYPE, VERTICAL),
+              set(dimension, height),
+              set(dimension, width)
+            ),
+          ]
+        )}
+      />
+
       <PanGestureHandler
         {...panProps}
         onGestureEvent={handleGesture}
@@ -417,41 +470,7 @@ function Pager({
                 }}
                 accessibilityRole="tablist"
               >
-                {width === UNSET
-                  ? null
-                  : adjacentChildren.map((child: any, i) => {
-                      // use map instead of React.Children because we want to track
-                      // the keys of these children by there index
-                      // React.Children shifts these key values intelligently, but it
-                      // causes issues with the memoized values in <Page /> components
-                      let index = i;
-
-                      if (adjacentChildOffset !== undefined) {
-                        index =
-                          activeIndex <= adjacentChildOffset
-                            ? i
-                            : activeIndex - adjacentChildOffset + i;
-                      }
-
-                      return (
-                        <IndexProvider index={index} key={index}>
-                          <FocusProvider focused={index === activeIndex}>
-                            <Page
-                              index={index}
-                              animatedIndex={animatedIndex}
-                              minimum={minimum}
-                              maximum={maximum}
-                              dimension={dimension}
-                              targetTransform={targetTransform}
-                              targetDimension={targetDimension}
-                              pageInterpolation={pageInterpolation}
-                            >
-                              {child}
-                            </Page>
-                          </FocusProvider>
-                        </IndexProvider>
-                      );
-                    })}
+                {renderChildren()}
               </Animated.View>
             </Animated.View>
           </Animated.View>
@@ -473,7 +492,7 @@ interface iPage {
   animatedIndex: Animated.Value<number>;
 }
 
-function _Page({
+function Page({
   children,
   index,
   minimum,
@@ -493,7 +512,7 @@ function _Page({
   // min-max the position based on clamp values
   // this means the <Page /> will have a container that is always positioned
   // in the same place, but the inner view can be translated within these bounds
-  const translation = memoize(minMax(position, minimum, maximum));
+  const translation = memoize(min(max(position, minimum), maximum));
 
   const defaultStyle = memoize({
     // map to height / width value depending on vertical / horizontal configuration
@@ -542,15 +561,13 @@ function _Page({
   );
 }
 
-const Page = memo(_Page);
-
 // utility to update animated values without changing their reference
 // this is key for using memoized Animated.Values and prevents costly rerenders
 function useAnimatedValue(
   value?: number,
-  defaultValue?: number
+  defaultValue = 0
 ): Animated.Value<number> {
-  const initialValue = value || defaultValue || 0;
+  const initialValue = value !== undefined ? value : defaultValue;
   const animatedValue = memoize(new Value(initialValue));
 
   useEffect(() => {
@@ -689,6 +706,105 @@ function useInterpolation(
   const offset = useOffset(_index);
   const styles = memoize(interpolateWithConfig(offset, pageInterpolation));
   return styles;
+}
+
+function interpolateWithConfig(
+  offset: Animated.Node<number>,
+  pageInterpolation?: iPageInterpolation
+): ViewStyle {
+  if (!pageInterpolation) {
+    return {};
+  }
+
+  return Object.keys(pageInterpolation).reduce((styles: any, key: any) => {
+    const currentStyle = pageInterpolation[key];
+
+    if (Array.isArray(currentStyle)) {
+      const _style = currentStyle.map((interpolationConfig: any) =>
+        interpolateWithConfig(offset, interpolationConfig)
+      );
+
+      styles[key] = _style;
+      return styles;
+    }
+
+    if (typeof currentStyle === 'object') {
+      let _style;
+      const { unit, ...rest } = currentStyle;
+      if (currentStyle.unit) {
+        _style = concat(interpolate(offset, rest), currentStyle.unit);
+      } else {
+        _style = interpolate(offset, currentStyle);
+      }
+
+      styles[key] = _style;
+      return styles;
+    }
+
+    if (typeof currentStyle === 'function') {
+      const _style = currentStyle(offset);
+      styles[key] = _style;
+      return styles;
+    }
+
+    return styles;
+  }, {});
+}
+
+function memoize(value: any): any {
+  const ref = React.useRef(value);
+  return ref.current;
+}
+
+const DEFAULT_SPRING_CONFIG = {
+  stiffness: 1000,
+  damping: 500,
+  mass: 3,
+  overshootClamping: false,
+  restDisplacementThreshold: 0.01,
+  restSpeedThreshold: 0.01,
+};
+
+function runSpring(
+  clock: Animated.Clock,
+  position: Animated.Value<number>,
+  toValue: Animated.Node<number>,
+  springConfig?: Partial<SpringConfig>
+) {
+  const state = {
+    finished: new Value(0),
+    velocity: new Value(0),
+    position: position,
+    time: new Value(0),
+  };
+
+  const config = {
+    ...DEFAULT_SPRING_CONFIG,
+    ...springConfig,
+    toValue: new Value(0),
+  };
+
+  return block([
+    cond(
+      clockRunning(clock),
+      [
+        cond(neq(config.toValue, toValue), [
+          set(state.finished, 0),
+          set(config.toValue, toValue),
+        ]),
+      ],
+      [
+        set(state.finished, 0),
+        set(state.time, 0),
+        set(state.velocity, 0),
+        set(config.toValue, toValue),
+        startClock(clock),
+      ]
+    ),
+    spring(clock, state, config),
+    cond(state.finished, [stopClock(clock), set(state.position, position)]),
+    state.position,
+  ]);
 }
 
 export {
