@@ -119,6 +119,7 @@ export interface iPager {
     prev?: number;
     next?: number;
   };
+  deceleration?: number;
 }
 const REALLY_BIG_NUMBER = 1000000000;
 
@@ -152,6 +153,7 @@ function Pager({
   clamp = {},
   clampDrag = {},
   animatedValue,
+  deceleration = 0.997,
 }: iPager) {
   const context = useContext(PagerContext);
 
@@ -180,6 +182,8 @@ function Pager({
 
   const dragX = memoize(new Value(0));
   const dragY = memoize(new Value(0));
+  const velocityX = memoize(new Value(0));
+  const velocityY = memoize(new Value(0));
   const gestureState = memoize(new Value(0));
 
   const handleGesture = memoize(
@@ -189,6 +193,8 @@ function Pager({
           nativeEvent: {
             translationX: dragX,
             translationY: dragY,
+            velocityX: velocityX,
+            velocityY: velocityY,
           },
         },
       ],
@@ -233,6 +239,7 @@ function Pager({
   const targetDimension = type === 'vertical' ? 'height' : 'width';
   const targetTransform = type === 'vertical' ? 'translateY' : 'translateX';
   const delta = type === 'vertical' ? dragY : dragX;
+  const velocity = type === 'vertical' ? velocityY : velocityX;
 
   const layoutDimension = type === 'vertical' ? height : width;
 
@@ -268,7 +275,12 @@ function Pager({
   const swiping = memoize(new Value(FALSE));
   const nextIndex = memoize(new Value(activeIndex));
   const animatedActiveIndex = memoize(new Value(activeIndex));
-  const change = memoize(sub(animatedActiveIndex, position));
+  const change = memoize(
+    add(
+      sub(animatedActiveIndex, position),
+      divide(velocity, 1000, dimension, 1 - deceleration)
+    )
+  );
   const absChange = memoize(abs(change));
   const shouldTransition = memoize(greaterThan(absChange, animatedThreshold));
   const indexChange = memoize(new Value(0));
@@ -341,7 +353,10 @@ function Pager({
 
           // set animatedActiveIndex for next swipe event
           set(animatedActiveIndex, nextIndex),
-          set(position, runSpring(clock, position, nextIndex, springConfig)),
+          set(
+            position,
+            runSpring(clock, position, nextIndex, velocity, springConfig)
+          ),
         ]
       ),
       position,
@@ -768,11 +783,12 @@ function runSpring(
   clock: Animated.Clock,
   position: Animated.Value<number>,
   toValue: Animated.Node<number>,
+  velocity: Animated.Value<number>,
   springConfig?: Partial<SpringConfig>
 ) {
   const state = {
     finished: new Value(0),
-    velocity: new Value(0),
+    velocity: velocity,
     position: position,
     time: new Value(0),
   };
