@@ -278,7 +278,9 @@ function Pager({
   const change = memoize(
     add(
       sub(animatedActiveIndex, position),
-      divide(velocity, 1000, dimension, 1 - deceleration)
+      // Distance travelled after decelerating to zero velocity at a constant rate.
+      // (initialVelocity / 1000.0) * decelerationRate / (1.0 - decelerationRate)
+      divide(velocity, 1000, (1 - deceleration) / deceleration, dimension)
     )
   );
   const absChange = memoize(abs(change));
