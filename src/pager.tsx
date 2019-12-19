@@ -270,17 +270,20 @@ function Pager({
     ? context[2]
     : _position;
 
+  const animatedPageSize = useAnimatedValue(pageSize);
+  const multiplier = memoize(multiply(dimension, animatedPageSize, -1));
+
   // pan event values to track
   const dragStart = memoize(new Value(0));
   const swiping = memoize(new Value(FALSE));
   const nextIndex = memoize(new Value(activeIndex));
   const animatedActiveIndex = memoize(new Value(activeIndex));
   const change = memoize(
-    add(
+    sub(
       sub(animatedActiveIndex, position),
       // Distance travelled after decelerating to zero velocity at a constant rate.
       // (initialVelocity / 1000.0) * decelerationRate / (1.0 - decelerationRate)
-      divide(velocity, 1000, (1 - deceleration) / deceleration, dimension)
+      divide(velocity, 1000, (1 - deceleration) / deceleration, multiplier)
     )
   );
   const absChange = memoize(abs(change));
@@ -357,7 +360,16 @@ function Pager({
           set(animatedActiveIndex, nextIndex),
           set(
             position,
-            runSpring(clock, position, nextIndex, velocity, springConfig)
+            divide(
+              runSpring(
+                clock,
+                velocity,
+                multiply(position, multiplier),
+                multiply(nextIndex, multiplier),
+                springConfig
+              ),
+              multiplier
+            )
           ),
         ]
       ),
@@ -377,13 +389,9 @@ function Pager({
     multiply(add(animatedIndex, clampNextValue), dimension)
   );
 
-  const animatedPageSize = useAnimatedValue(pageSize);
-
   // container offset -- this is the window of focus for active screens
   // it shifts around based on the animatedIndex value
-  const containerTranslation = memoize(
-    multiply(animatedIndex, dimension, animatedPageSize, -1)
-  );
+  const containerTranslation = memoize(multiply(animatedIndex, multiplier));
 
   // slice the children that are rendered by the <Pager />
   // this enables very large child lists to render efficiently
@@ -783,15 +791,15 @@ const DEFAULT_SPRING_CONFIG = {
 
 function runSpring(
   clock: Animated.Clock,
-  position: Animated.Value<number>,
-  toValue: Animated.Node<number>,
   velocity: Animated.Value<number>,
+  position: Animated.Node<number>,
+  toValue: Animated.Node<number>,
   springConfig?: Partial<SpringConfig>
 ) {
   const state = {
     finished: new Value(0),
     velocity: velocity,
-    position: position,
+    position: new Value(0),
     time: new Value(0),
   };
 
@@ -813,7 +821,7 @@ function runSpring(
       [
         set(state.finished, 0),
         set(state.time, 0),
-        set(state.velocity, 0),
+        set(state.position, position),
         set(config.toValue, toValue),
         startClock(clock),
       ]
