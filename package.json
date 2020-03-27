@@ -11,7 +11,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CrowdLinker/react-native-pager.git"
+    "url": "git+https://github.com/ajsmth/react-native-pager.git"
   },
   "license": "MIT",
   "scripts": {
@@ -64,9 +64,9 @@
   },
   "description": "simple pager component for react-native",
   "bugs": {
-    "url": "https://github.com/CrowdLinker/react-native-pager/issues"
+    "url": "https://github.com/ajsmth/react-native-pager/issues"
   },
-  "homepage": "https://github.com/CrowdLinker/react-native-pager#readme",
+  "homepage": "https://github.com/ajsmth/react-native-pager#readme",
   "directories": {
     "example": "example",
     "test": "test"
