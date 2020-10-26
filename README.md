@@ -20,7 +20,7 @@ yarn add react-native-reanimated
 
 There are additional steps to setting these up:
 
-- [react-native-gesture-handler](https://kmagiera.github.io/react-native-gesture-handler/docs/getting-started.html)
+- [react-native-gesture-handler](https://docs.swmansion.com/react-native-gesture-handler/docs/#installation)
 - [react-native-reanimated](https://github.com/kmagiera/react-native-reanimated#installation)
 
 # Example
