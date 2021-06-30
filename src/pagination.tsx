@@ -88,12 +88,14 @@ function Slider({ numberOfScreens, style }: iSlider) {
   return (
     <Animated.View onLayout={handleLayout}>
       <Animated.View
-        style={{
-          width: sliderWidth,
-          transform: [{ translateX: translation }],
-          ...DEFAULT_SLIDER_STYLE,
-          ...style,
-        }}
+        style={
+          {
+            width: sliderWidth,
+            transform: [{ translateX: translation }],
+            ...DEFAULT_SLIDER_STYLE,
+            ...style,
+          } as Animated.AnimateStyle<ViewStyle>
+        }
       />
     </Animated.View>
   );

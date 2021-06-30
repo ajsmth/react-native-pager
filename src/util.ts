@@ -4,7 +4,7 @@ import Animated from 'react-native-reanimated';
 import { iPageInterpolation, SpringConfig } from './pager';
 
 const {
-  interpolate,
+  interpolateNode,
   concat,
   Value,
   clockRunning,
@@ -41,9 +41,9 @@ function interpolateWithConfig(
       let _style;
       const { unit, ...rest } = currentStyle;
       if (currentStyle.unit) {
-        _style = concat(interpolate(offset, rest), currentStyle.unit);
+        _style = concat(interpolateNode(offset, rest), currentStyle.unit);
       } else {
-        _style = interpolate(offset, currentStyle);
+        _style = interpolateNode(offset, currentStyle);
       }
 
       styles[key] = _style;
