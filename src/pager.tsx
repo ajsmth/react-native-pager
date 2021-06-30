@@ -83,7 +83,7 @@ const {
   greaterThan,
   abs,
   ceil,
-  interpolate,
+  interpolateNode,
   concat,
   neq,
   and,
@@ -463,11 +463,13 @@ function Pager({
           <Animated.View style={style || { flex: 1 }}>
             <Animated.View style={{ flex: 1 }} onLayout={handleLayout}>
               <Animated.View
-                style={{
-                  flex: 1,
-                  [targetDimension]: totalDimension,
-                  transform: [{ [targetTransform]: containerTranslation }],
-                }}
+                style={
+                  {
+                    flex: 1,
+                    [targetDimension]: totalDimension,
+                    transform: [{ [targetTransform]: containerTranslation }],
+                  } as Animated.AnimateStyle<ViewStyle>
+                }
               >
                 {renderChildren()}
               </Animated.View>
@@ -731,9 +733,9 @@ function interpolateWithConfig(
       let _style;
       const { unit, ...rest } = currentStyle;
       if (currentStyle.unit) {
-        _style = concat(interpolate(offset, rest), currentStyle.unit);
+        _style = concat(interpolateNode(offset, rest), currentStyle.unit);
       } else {
-        _style = interpolate(offset, currentStyle);
+        _style = interpolateNode(offset, currentStyle);
       }
 
       styles[key] = _style;
