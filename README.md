@@ -1,5 +1,9 @@
 # react-native-pager
 
+# Looking for maintainer(s)!
+
+Unforunately I'm no longer able to keep up with this library - please reach out if anyone is interested in helping keep this up to date and give it some love! 
+
 A fully controllable, high performance pager for React Native
 
 <p align="center" style="display: flex; justify-content: center; align-items:center;">
