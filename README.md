@@ -1,3 +1,7 @@
+# Using Renimated 2?
+
+I've implemented a similar pager component for that: https://github.com/ajsmth/pager-rn
+
 # Looking for maintainer(s)!
 
 Unforunately I'm no longer able to keep up with this library - please reach out if anyone is interested in helping keep this up to date and give it some love! 
